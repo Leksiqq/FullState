@@ -12,6 +12,61 @@ public static class FullStateExtensions
     private static System.Timers.Timer _checkSessions = null!;
     private static int _cookieSequenceGen = 0;
 
+    public static IServiceCollection AddSessional(this IServiceCollection services, Type implementationType)
+    {
+        services.AddScoped(implementationType);
+        SessionalServiceProvider.SessionalServices.TryAdd(implementationType, 1);
+        return services;
+    }
+
+    public static IServiceCollection AddSessional(this IServiceCollection services, Type serviceType, Func<IServiceProvider, object> implementationFactory)
+    {
+        services.AddScoped(serviceType, implementationFactory);
+        SessionalServiceProvider.SessionalServices.TryAdd(serviceType, 1);
+        return services;
+    }
+
+    public static IServiceCollection AddSessional(this IServiceCollection services, Type serviceType, Type implementationType)
+    {
+        services.AddScoped(serviceType, implementationType);
+        SessionalServiceProvider.SessionalServices.TryAdd(serviceType, 1);
+        return services;
+    }
+
+    public static IServiceCollection AddSessional<TService, TImplementation>(this IServiceCollection services)
+        where TService : class
+        where TImplementation : class, TService
+    {
+        services.AddScoped<TService, TImplementation>();
+        SessionalServiceProvider.SessionalServices.TryAdd(typeof(TService), 1);
+        return services;
+    }
+
+    public static IServiceCollection AddSessional<TService, TImplementation>(this IServiceCollection services, Func<IServiceProvider, TImplementation> implementationFactory)
+        where TService : class
+        where TImplementation : class, TService
+    {
+        services.AddScoped<TService, TImplementation>(implementationFactory);
+        SessionalServiceProvider.SessionalServices.TryAdd(typeof(TService), 1);
+        return services;
+    }
+
+    public static IServiceCollection AddSessional<TService>(this IServiceCollection services)
+        where TService : class
+    {
+        services.AddScoped<TService>();
+        SessionalServiceProvider.SessionalServices.TryAdd(typeof(TService), 1);
+        return services;
+    }
+
+    public static IServiceCollection AddSessional<TService>(this IServiceCollection services, Func<IServiceProvider, TService> implementationFactory)
+        where TService : class
+    {
+        services.AddScoped<TService>(implementationFactory);
+        SessionalServiceProvider.SessionalServices.TryAdd(typeof(TService), 1);
+        return services;
+    }
+
     public static IServiceCollection AddFullState(this IServiceCollection services, Action<FullStateOptions>? configure = null)
     {
         configure?.Invoke(_fullStateOptions);
@@ -28,7 +83,7 @@ public static class FullStateExtensions
         postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
         {
             Console.WriteLine($"{k}, {v}, {r}, {s}");
-            if(r is EvictionReason.Expired && s == typeof(FullStateExtensions) && v is IDisposable disposable)
+            if(r is EvictionReason.Expired && s == typeof(FullStateExtensions) && v is SessionalServiceProvider disposable)
             {
                 disposable.Dispose();
             }
@@ -59,30 +114,31 @@ public static class FullStateExtensions
                 }
             }
             object sessionObj = null;
-            IServiceProvider sessionServiceProvider = null;
+            SessionalServiceProvider sessionalServiceProvider = null;
             int caseMatch = 0;
-            Console.WriteLine($"{_fullStateOptions.Cookie.Name}");
             string key = context.Request.Cookies[_fullStateOptions.Cookie.Name];
             bool isNewSession = false;
             if(
                 key is null && (caseMatch = 1) == caseMatch
                 || !sessions.TryGetValue(key, out sessionObj) && (caseMatch = 2) == caseMatch
-                || (sessionServiceProvider = sessionObj as IServiceProvider) is null && (caseMatch = 3) == caseMatch
+                || (sessionalServiceProvider = sessionObj as SessionalServiceProvider) is null && (caseMatch = 3) == caseMatch
             )
             {
-                Console.WriteLine(caseMatch);
                 key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref _cookieSequenceGen)}";
-                sessionServiceProvider = context.RequestServices.CreateScope().ServiceProvider;
+                sessionalServiceProvider = new() { 
+                    ScopedServiceProvider = context.RequestServices.CreateScope().ServiceProvider
+                };
                 context.Response.Cookies.Append(_fullStateOptions.Cookie.Name, key, _fullStateOptions.Cookie.Build(context));
                 isNewSession = true;
             }
-            context.RequestServices = sessionServiceProvider;
+            sessionalServiceProvider.SourceServiceProvider = context.RequestServices;
+            context.RequestServices = sessionalServiceProvider;
             try
             {
                 await next?.Invoke();
                 if (isNewSession)
                 {
-                    sessions.Set(key, sessionServiceProvider, _entryOptions);
+                    sessions.Set(key, sessionalServiceProvider, _entryOptions);
                 }
             }
             catch (Exception ex)
