@@ -10,7 +10,7 @@ PostEvictionCallbackRegistration postEvictionCallbackRegistration = new PostEvic
 postEvictionCallbackRegistration.State = typeof(Program);
 postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
 {
-    if (r is EvictionReason.Expired && s == typeof(Program) && v is IDisposable disposable)
+    if (r is EvictionReason.Expired && s is Type sType && sType == typeof(Program) && v is IDisposable disposable)
     {
         disposable.Dispose();
     }
@@ -29,9 +29,6 @@ builder.Logging.AddConsole(op =>
 {
     op.TimestampFormat = "[HH:mm:ss:fff] ";
 });
-
-//builder.Services.AddScoped<SessionHolder>();
-//builder.Services.AddScoped<Session>(op => op.GetRequiredService<SessionHolder>().session);
 
 var app = builder.Build();
 
@@ -53,9 +50,10 @@ app.Use(async (context, next) =>
         context.Response.Cookies.Append(cookieName, key);
         isNewSession = true;
     }
+
     ILogger<Program> logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
     logger.LogInformation($"{context.Connection.Id}: {context.Request.Path}: {session}({session.GetHashCode()})");
-    //context.RequestServices.GetRequiredService<SessionHolder>().session = session;
+
     try
     {
         await next?.Invoke();
@@ -72,7 +70,6 @@ app.Use(async (context, next) =>
 
 app.MapGet("/", async context =>
 {
-    //await context.Response.WriteAsync($"{context.RequestServices.GetRequiredService<Session>()}({context.RequestServices.GetRequiredService<Session>().GetHashCode()})");
     await context.Response.WriteAsync($"Hello, World!");
 });
 
