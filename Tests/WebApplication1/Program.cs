@@ -18,6 +18,7 @@ postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
 entryOptions.PostEvictionCallbacks.Add(postEvictionCallbackRegistration);
 
 System.Timers.Timer checkSessions = null!;
+TimeSpan checkSessionsInterval = TimeSpan.FromSeconds(1);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,7 +44,7 @@ app.Use(async (context, next) =>
         {
             if (checkSessions is null)
             {
-                checkSessions = new(idleTimeout.TotalMilliseconds);
+                checkSessions = new(checkSessionsInterval.TotalMilliseconds);
                 checkSessions.Elapsed += (s, e) =>
                 {
                     sessions.TryGetValue(string.Empty, out object dumb);
