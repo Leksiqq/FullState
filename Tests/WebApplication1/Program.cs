@@ -17,6 +17,8 @@ postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
 };
 entryOptions.PostEvictionCallbacks.Add(postEvictionCallbackRegistration);
 
+System.Timers.Timer checkSessions = null!;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMemoryCache(op =>
@@ -35,6 +37,22 @@ var app = builder.Build();
 app.Use(async (context, next) =>
 {
     IMemoryCache sessions = context.RequestServices.GetRequiredService<IMemoryCache>();
+    if (checkSessions is null)
+    {
+        lock (app)
+        {
+            if (checkSessions is null)
+            {
+                checkSessions = new(idleTimeout.TotalMilliseconds);
+                checkSessions.Elapsed += (s, e) =>
+                {
+                    sessions.TryGetValue(string.Empty, out object dumb);
+                };
+                checkSessions.Enabled = true;
+                checkSessions.AutoReset = true;
+            }
+        }
+    }
     Session session = null;
     int caseMatch = 0;
     string key = context.Request.Cookies[cookieName];
