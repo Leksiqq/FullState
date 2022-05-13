@@ -86,7 +86,3 @@ public class Session : IDisposable
     }
 }
 
-public class SessionHolder
-{
-    public Session session;
-}
