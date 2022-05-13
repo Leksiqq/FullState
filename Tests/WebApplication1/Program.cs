@@ -27,6 +27,9 @@ builder.Services.AddMemoryCache(op =>
     op.ExpirationScanFrequency = TimeSpan.FromSeconds(1);
 });
 
+builder.Services.AddScoped<SessionHolder>();
+builder.Services.AddScoped<Session>(op => op.GetRequiredService<SessionHolder>().Session);
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(op =>
 {
@@ -72,6 +75,7 @@ app.Use(async (context, next) =>
 
     ILogger<Program> logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
     logger.LogInformation($"{context.Connection.Id}: {context.Request.Path}: {session}({session.GetHashCode()})");
+    context.RequestServices.GetRequiredService<SessionHolder>().Session = session;
 
     try
     {
@@ -89,7 +93,8 @@ app.Use(async (context, next) =>
 
 app.MapGet("/", async context =>
 {
-    await context.Response.WriteAsync($"Hello, World!");
+    Session session = context.RequestServices.GetRequiredService<Session>();
+    await context.Response.WriteAsync($"Hello, World! {session}({session.GetHashCode()})");
 });
 
 app.Run();
@@ -103,5 +108,10 @@ public class Session : IDisposable
     {
         _logger.LogInformation($"{this}({GetHashCode()}) disposed");
     }
+}
+
+public class SessionHolder
+{
+    public Session Session { get; set; }
 }
 
