@@ -28,7 +28,6 @@ builder.Services.AddMemoryCache(op =>
 });
 
 builder.Services.AddScoped<SessionHolder>();
-builder.Services.AddScoped<Session>(op => op.GetRequiredService<SessionHolder>().Session);
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(op =>
@@ -93,8 +92,8 @@ app.Use(async (context, next) =>
 
 app.MapGet("/", async context =>
 {
-    Session session = context.RequestServices.GetRequiredService<Session>();
-    await context.Response.WriteAsync($"Hello, World! {session}({session.GetHashCode()})");
+    Session session = context.RequestServices.GetRequiredService<SessionHolder>().Session;
+    await context.Response.WriteAsync($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] Hello, World! {session}({session.GetHashCode()})");
 });
 
 app.Run();
