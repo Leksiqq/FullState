@@ -82,8 +82,7 @@ public static class FullStateExtensions
         postEvictionCallbackRegistration.State = typeof(FullStateExtensions);
         postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
         {
-            Console.WriteLine($"{k}, {v}, {r}, {s}");
-            if(r is EvictionReason.Expired && s == typeof(FullStateExtensions) && v is SessionalServiceProvider disposable)
+            if(r is EvictionReason.Expired && s is Type stype && stype == typeof(FullStateExtensions) && v is SessionalServiceProvider disposable)
             {
                 disposable.Dispose();
             }
@@ -113,35 +112,35 @@ public static class FullStateExtensions
                     }
                 }
             }
-            object sessionObj = null;
-            SessionalServiceProvider sessionalServiceProvider = null;
-            int caseMatch = 0;
+            object? sessionObj = null;
+            SessionalServiceProvider? sessionalServiceProvider = null;
             string key = context.Request.Cookies[_fullStateOptions.Cookie.Name];
             bool isNewSession = false;
             if(
-                key is null && (caseMatch = 1) == caseMatch
-                || !sessions.TryGetValue(key, out sessionObj) && (caseMatch = 2) == caseMatch
-                || (sessionalServiceProvider = sessionObj as SessionalServiceProvider) is null && (caseMatch = 3) == caseMatch
+                key is null
+                || !sessions.TryGetValue(key, out sessionObj)
+                || (sessionalServiceProvider = sessionObj as SessionalServiceProvider) is null
             )
             {
                 key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref _cookieSequenceGen)}";
-                sessionalServiceProvider = new() { 
+                sessionalServiceProvider = new SessionalServiceProvider
+                { 
                     ScopedServiceProvider = context.RequestServices.CreateScope().ServiceProvider
                 };
                 context.Response.Cookies.Append(_fullStateOptions.Cookie.Name, key, _fullStateOptions.Cookie.Build(context));
                 isNewSession = true;
             }
-            sessionalServiceProvider.SourceServiceProvider = context.RequestServices;
+            sessionalServiceProvider!.SourceServiceProvider = context.RequestServices;
             context.RequestServices = sessionalServiceProvider;
             try
             {
-                await next?.Invoke();
+                await (next?.Invoke() ?? Task.CompletedTask);
                 if (isNewSession)
                 {
                     sessions.Set(key, sessionalServiceProvider, _entryOptions);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
