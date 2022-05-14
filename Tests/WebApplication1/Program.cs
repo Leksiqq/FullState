@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
+using System.Collections.Concurrent;
 
 const string cookieName = "qq";
 TimeSpan idleTimeout = TimeSpan.FromSeconds(20);
@@ -28,6 +29,8 @@ builder.Services.AddMemoryCache(op =>
 });
 
 builder.Services.AddScoped<SessionHolder>();
+builder.Services.AddScoped<InfoProvider>();
+builder.Services.AddScoped<Another>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(op =>
@@ -67,7 +70,7 @@ app.Use(async (context, next) =>
     )
     {
         key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref cookieSequenceGen)}";
-        session = new(context.RequestServices.GetRequiredService<ILogger<Session>>());
+        session = new(context.RequestServices.CreateScope().ServiceProvider);
         context.Response.Cookies.Append(cookieName, key);
         isNewSession = true;
     }
@@ -93,7 +96,8 @@ app.Use(async (context, next) =>
 app.MapGet("/", async context =>
 {
     Session session = context.RequestServices.GetRequiredService<SessionHolder>().Session;
-    await context.Response.WriteAsync($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] Hello, World! {session}({session.GetHashCode()})");
+    await context.Response.WriteAsync($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] Hello, World! {session}({session.GetHashCode()}) " 
+        + session.SessionServiceProvider.GetRequiredService<InfoProvider>().Get());
 });
 
 app.Run();
@@ -101,10 +105,16 @@ app.Run();
 public class Session : IDisposable
 {
     private readonly ILogger<Session> _logger;
+    public IServiceProvider SessionServiceProvider { get; init; }
 
-    public Session(ILogger<Session> logger) => _logger = logger;
+    public Session(IServiceProvider serviceProvider) => 
+        (SessionServiceProvider, _logger) = (serviceProvider, serviceProvider.GetRequiredService<ILogger<Session>>());
     public void Dispose()
     {
+        if(SessionServiceProvider is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
         _logger.LogInformation($"{this}({GetHashCode()}) disposed");
     }
 }
@@ -113,4 +123,62 @@ public class SessionHolder
 {
     public Session Session { get; set; }
 }
+
+public class InfoProvider : IDisposable
+{
+    private ConcurrentQueue<int> _queue = new();
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private Task _fill = null;
+    private readonly ILogger<InfoProvider> _logger;
+    private readonly IServiceProvider _serviceProvider;
+
+    public InfoProvider(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+        _logger = _serviceProvider.GetRequiredService<ILogger<InfoProvider>>();
+        int value = 0;
+        CancellationToken cancellationToken = _cancellationTokenSource.Token;
+        _fill = Task.Run(async () =>
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(1000);
+                _queue.Enqueue(++value);
+            }
+        });
+    }
+
+    public string Get()
+    {
+        Another another = _serviceProvider.GetRequiredService<Another>();
+        _logger.LogInformation($"{this}({GetHashCode()}) {another}({another.GetHashCode()})");
+        List<int> result = new();
+        while (_queue.TryDequeue(out int k))
+        {
+            result.Add(k);
+        }
+        return $"{this}({GetHashCode()}) {another}({another.GetHashCode()}), {string.Join(", ", result)}";
+    }
+    
+    public void Dispose()
+    {
+        _cancellationTokenSource.Cancel();
+        _fill.Wait();
+        _logger.LogInformation($"{this}({GetHashCode()}) disposed");
+    }
+
+}
+
+public class Another : IDisposable
+{
+    private readonly ILogger<Another> _logger;
+
+    public Another(ILogger<Another> logger) => _logger = logger;
+    public void Dispose()
+    {
+        _logger.LogInformation($"{this}({GetHashCode()}) disposed");
+    }
+}
+
+
 
