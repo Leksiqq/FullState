@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Caching.Memory;
 using Net.Leksi.Server;
 using System.Collections.Concurrent;
 
@@ -39,7 +38,7 @@ public class InfoProvider : IDisposable
 {
     private ConcurrentQueue<int> _queue = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private Task _fill = null;
+    private Task _fill = null!;
     private readonly ILogger<InfoProvider> _logger;
     private readonly IServiceProvider _serviceProvider;
 
