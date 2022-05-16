@@ -3,7 +3,16 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Net.Leksi.FullState;
-
+/// <summary>
+/// <para xml:lang="ru">
+/// Класс, предоставляющий расширения для <see cref="IServiceCollection"/> и <see cref="IApplicationBuilder"/> предназначенные для 
+/// поддержки full state сервера
+/// </para>
+/// <para xml:lang="en">
+/// A class that provides extensions to <see cref="IServiceCollection"/> and <see cref="IApplicationBuilder"/> for
+/// full state server support
+/// </para>
+/// </summary>
 public static class FullStateExtensions
 {
 
@@ -12,6 +21,31 @@ public static class FullStateExtensions
     private static System.Timers.Timer _checkSessions = null!;
     private static int _cookieSequenceGen = 0;
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Добавляет службу с ограниченной сессией областью
+    /// </para>
+    /// <para xml:lang="en">
+    /// Adds a session-scoped service
+    /// </para>
+    /// </summary>
+    /// <param name="services">
+    /// <para xml:lang="ru">
+    /// Заданная коллекция
+    /// </para>
+    /// <para xml:lang="en">
+    /// Given collection
+    /// </para>
+    /// </param>
+    /// <param name="implementationType">
+    /// <para xml:lang="ru">
+    /// Тип службы
+    /// </para>
+    /// <para xml:lang="en">
+    /// Service type
+    /// </para>
+    /// </param>
+    /// <returns></returns>
     public static IServiceCollection AddSessional(this IServiceCollection services, Type implementationType)
     {
         services.AddScoped(implementationType);
@@ -19,6 +53,39 @@ public static class FullStateExtensions
         return services;
     }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Добавляет службу с ограниченной сессией областью
+    /// </para>
+    /// <para xml:lang="en">
+    /// Adds a session-scoped service
+    /// </para>
+    /// </summary>
+    /// <param name="services">
+    /// <para xml:lang="ru">
+    /// Заданная коллекция
+    /// </para>
+    /// <para xml:lang="en">
+    /// Given collection
+    /// </para>
+    /// </param>
+    /// <param name="serviceType">
+    /// <para xml:lang="ru">
+    /// Тип службы
+    /// </para>
+    /// <para xml:lang="en">
+    /// Service type
+    /// </para>
+    /// </param>
+    /// <param name="implementationFactory">
+    /// <para xml:lang="ru">
+    /// Фабрика реализации
+    /// </para>
+    /// <para xml:lang="en">
+    /// Implementation Factory
+    /// </para>
+    /// </param>
+    /// <returns></returns>
     public static IServiceCollection AddSessional(this IServiceCollection services, Type serviceType, Func<IServiceProvider, object> implementationFactory)
     {
         services.AddScoped(serviceType, implementationFactory);
@@ -26,13 +93,78 @@ public static class FullStateExtensions
         return services;
     }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Добавляет службу с ограниченной сессией областью
+    /// </para>
+    /// <para xml:lang="en">
+    /// Adds a session-scoped service
+    /// </para>
+    /// </summary>
+    /// <param name="services">
+    /// <para xml:lang="ru">
+    /// Заданная коллекция
+    /// </para>
+    /// <para xml:lang="en">
+    /// Given collection
+    /// </para>
+    /// </param>
+    /// <param name="serviceType">
+    /// <para xml:lang="ru">
+    /// Тип службы
+    /// </para>
+    /// <para xml:lang="en">
+    /// Service type
+    /// </para>
+    /// </param>
+    /// <param name="implementationType">
+    /// <para xml:lang="ru">
+    /// Тип реализации
+    /// </para>
+    /// <para xml:lang="en">
+    /// Implementation type
+    /// </para>
+    /// </param>
+    /// <returns></returns>
     public static IServiceCollection AddSessional(this IServiceCollection services, Type serviceType, Type implementationType)
     {
         services.AddScoped(serviceType, implementationType);
         FullState.SessionalServices.Add(serviceType);
         return services;
     }
-
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Добавляет службу с ограниченной сессией областью
+    /// </para>
+    /// <para xml:lang="en">
+    /// Adds a session-scoped service
+    /// </para>
+    /// </summary>
+    /// <typeparam name="TService">
+    /// <para xml:lang="ru">
+    /// Тип службы
+    /// </para>
+    /// <para xml:lang="en">
+    /// Service type
+    /// </para>
+    /// </typeparam>
+    /// <typeparam name="TImplementation">
+    /// <para xml:lang="ru">
+    /// Тип реализации
+    /// </para>
+    /// <para xml:lang="en">
+    /// Implementation type
+    /// </para>
+    /// </typeparam>
+    /// <param name="services">
+    /// <para xml:lang="ru">
+    /// Заданная коллекция
+    /// </para>
+    /// <para xml:lang="en">
+    /// Given collection
+    /// </para>
+    /// </param>
+    /// <returns></returns>
     public static IServiceCollection AddSessional<TService, TImplementation>(this IServiceCollection services)
         where TService : class
         where TImplementation : class, TService
@@ -42,6 +174,47 @@ public static class FullStateExtensions
         return services;
     }
 
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Добавляет службу с ограниченной сессией областью
+    /// </para>
+    /// <para xml:lang="en">
+    /// Adds a session-scoped service
+    /// </para>
+    /// </summary>
+    /// <typeparam name="TService">
+    /// <para xml:lang="ru">
+    /// Тип службы
+    /// </para>
+    /// <para xml:lang="en">
+    /// Service type
+    /// </para>
+    /// </typeparam>
+    /// <typeparam name="TImplementation">
+    /// <para xml:lang="ru">
+    /// Тип реализации
+    /// </para>
+    /// <para xml:lang="en">
+    /// Implementation type
+    /// </para>
+    /// </typeparam>
+    /// <param name="services">
+    /// <para xml:lang="ru">
+    /// Заданная коллекция
+    /// </para>
+    /// <para xml:lang="en">
+    /// Given collection
+    /// </para>
+    /// </param>
+    /// <param name="implementationFactory">
+    /// <para xml:lang="ru">
+    /// Фабрика реализации
+    /// </para>
+    /// <para xml:lang="en">
+    /// Implementation Factory
+    /// </para>
+    /// </param>
+    /// <returns></returns>
     public static IServiceCollection AddSessional<TService, TImplementation>(this IServiceCollection services, Func<IServiceProvider, TImplementation> implementationFactory)
         where TService : class
         where TImplementation : class, TService
@@ -50,7 +223,31 @@ public static class FullStateExtensions
         FullState.SessionalServices.Add(typeof(TService));
         return services;
     }
-
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Добавляет службу с ограниченной сессией областью
+    /// </para>
+    /// <para xml:lang="en">
+    /// Adds a session-scoped service
+    /// </para>
+    /// </summary>
+    /// <typeparam name="TService">
+    /// <para xml:lang="ru">
+    /// Тип службы
+    /// </para>
+    /// <para xml:lang="en">
+    /// Service type
+    /// </para>
+    /// </typeparam>
+    /// <param name="services">
+    /// <para xml:lang="ru">
+    /// Заданная коллекция
+    /// </para>
+    /// <para xml:lang="en">
+    /// Given collection
+    /// </para>
+    /// </param>
+    /// <returns></returns>
     public static IServiceCollection AddSessional<TService>(this IServiceCollection services)
         where TService : class
     {
@@ -58,7 +255,39 @@ public static class FullStateExtensions
         FullState.SessionalServices.Add(typeof(TService));
         return services;
     }
-
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Добавляет службу с ограниченной сессией областью
+    /// </para>
+    /// <para xml:lang="en">
+    /// Adds a session-scoped service
+    /// </para>
+    /// </summary>
+    /// <typeparam name="TService">
+    /// <para xml:lang="ru">
+    /// Тип службы
+    /// </para>
+    /// <para xml:lang="en">
+    /// Service type
+    /// </para>
+    /// </typeparam>
+    /// <param name="services">
+    /// <para xml:lang="ru">
+    /// Заданная коллекция
+    /// </para>
+    /// <para xml:lang="en">
+    /// Given collection
+    /// </para>
+    /// </param>
+    /// <param name="implementationFactory">
+    /// <para xml:lang="ru">
+    /// Фабрика реализации
+    /// </para>
+    /// <para xml:lang="en">
+    /// Implementation Factory
+    /// </para>
+    /// </param>
+    /// <returns></returns>
     public static IServiceCollection AddSessional<TService>(this IServiceCollection services, Func<IServiceProvider, TService> implementationFactory)
         where TService : class
     {
@@ -66,7 +295,31 @@ public static class FullStateExtensions
         FullState.SessionalServices.Add(typeof(TService));
         return services;
     }
-
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Добавляет инфраструктуру, необходимую для full state сервера
+    /// </para>
+    /// <para xml:lang="en">
+    /// Adds the infrastructure needed for a full state server
+    /// </para>
+    /// </summary>
+    /// <param name="services">
+    /// <para xml:lang="ru">
+    /// Заданная коллекция
+    /// </para>
+    /// <para xml:lang="en">
+    /// Given collection
+    /// </para>
+    /// </param>
+    /// <param name="configure">
+    /// <para xml:lang="ru">
+    /// Предоставленные параметры для настройки
+    /// </para>
+    /// <para xml:lang="en">
+    /// Provided options for customization
+    /// </para>
+    /// </param>
+    /// <returns></returns>
     public static IServiceCollection AddFullState(this IServiceCollection services, Action<FullStateOptions>? configure = null)
     {
         configure?.Invoke(_fullStateOptions);
@@ -96,7 +349,18 @@ public static class FullStateExtensions
 
         return services;
     }
-
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Добавляет ПО промежуточного слоя для автоматического включения поддержки full state сервера
+    /// </para>
+    /// /// <para xml:lang="en">
+    /// Adds middleware to automatically enable server full state support
+    /// </para>
+    /// </summary>
+    /// <param name="app">
+    /// <see cref="IApplicationBuilder"/>
+    /// </param>
+    /// <returns></returns>
     public static IApplicationBuilder UseFullState(this IApplicationBuilder app)
     {
         app.Use(async (context, next) =>

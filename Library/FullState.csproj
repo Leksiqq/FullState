@@ -1,11 +1,33 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <RootNamespace>Net.Leksi.Server</RootNamespace>
+	  <TargetFramework>net6.0</TargetFramework>
+	  <ImplicitUsings>enable</ImplicitUsings>
+	  <Nullable>enable</Nullable>
+	  <AssemblyName>Net.Leksi.FullState</AssemblyName>
+	  <RootNamespace>Net.Leksi.FullState</RootNamespace>
+	  <Copyright>2022-05-16</Copyright>
+	  <VersionPrefix>1.0.0</VersionPrefix>
+	  <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
+	  <Description>
+		  A library for a full state server support.
+	  </Description>
+	  <GenerateDocumentationFile>True</GenerateDocumentationFile>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <PackageId>$(AssemblyName)</PackageId>
+	  <Authors>Alexey leksiq Zakharov</Authors>
+	  <RepositoryUrl>https://sourceforge.net/p/fullstate/code</RepositoryUrl>
+	  <RepositoryUrl>https://github.com/Leksiqq/FullState</RepositoryUrl>
+	  <PackageProjectUrl>https://fullstate.sourceforge.io/</PackageProjectUrl>
+	  <PackageTags>ASP.NET;Dependency Injection;Full State Server</PackageTags>
+	  <OutputType>Library</OutputType>
   </PropertyGroup>
+
+  <Target Name="CopyPackage" AfterTargets="Pack">
+	  <Move SourceFiles="$(OutputPath)..\$(PackageId).$(PackageVersion).nupkg" DestinationFolder="F:\leksi\C#\nuget.local" />
+  </Target>
+
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
