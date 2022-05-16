@@ -1,6 +1,6 @@
 ﻿namespace Net.Leksi.Server;
 
-internal class FullState : IFullState
+internal class FullState : IFullState, IServiceProvider
 {
     internal static HashSet<Type> SessionalServices { get; private set; } = new();
 
