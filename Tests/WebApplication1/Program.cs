@@ -1,40 +1,17 @@
 using Microsoft.Extensions.Caching.Memory;
+using Net.Leksi.Server;
 using System.Collections.Concurrent;
-
-const string cookieName = "qq";
-TimeSpan idleTimeout = TimeSpan.FromSeconds(20);
-
-int cookieSequenceGen = 0;
-
-var entryOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(idleTimeout);
-PostEvictionCallbackRegistration postEvictionCallbackRegistration = new PostEvictionCallbackRegistration();
-postEvictionCallbackRegistration.State = typeof(Program);
-postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
-{
-    if (r is EvictionReason.Expired && s is Type sType && sType == typeof(Program) && v is Session session 
-        && session.SessionServiceProvider is IDisposable disposable)
-    {
-        disposable.Dispose();
-    }
-};
-entryOptions.PostEvictionCallbacks.Add(postEvictionCallbackRegistration);
-
-System.Timers.Timer checkSessions = null!;
-TimeSpan checkSessionsInterval = TimeSpan.FromSeconds(1);
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddMemoryCache(op =>
+builder.Services.AddFullState(op =>
 {
+    op.Cookie.Name = "qq";
     op.ExpirationScanFrequency = TimeSpan.FromSeconds(1);
+    op.IdleTimeout = TimeSpan.FromSeconds(20);
 });
 
-builder.Services.AddScoped<SessionHolder>();
-builder.Services.AddScoped<Session>(op => op.GetRequiredService<SessionHolder>().Session);
-Session.SessionalServices.Add(typeof(Session));
-
-builder.Services.AddScoped<InfoProvider>();
-Session.SessionalServices.Add(typeof(InfoProvider));
+builder.Services.AddSessional<InfoProvider>();
 
 builder.Services.AddScoped<Another>();
 
@@ -46,62 +23,7 @@ builder.Logging.AddConsole(op =>
 
 var app = builder.Build();
 
-app.Use(async (context, next) =>
-{
-    IMemoryCache sessions = context.RequestServices.GetRequiredService<IMemoryCache>();
-    if (checkSessions is null)
-    {
-        lock (app)
-        {
-            if (checkSessions is null)
-            {
-                checkSessions = new(checkSessionsInterval.TotalMilliseconds);
-                checkSessions.Elapsed += (s, e) =>
-                {
-                    sessions.TryGetValue(string.Empty, out object dumb);
-                };
-                checkSessions.Enabled = true;
-                checkSessions.AutoReset = true;
-            }
-        }
-    }
-    Session session = null;
-    int caseMatch = 0;
-    string key = context.Request.Cookies[cookieName];
-    bool isNewSession = false;
-    if (
-        key is null
-        || !sessions.TryGetValue(key, out object sessionObj)
-        || (session = sessionObj as Session) is null
-    )
-    {
-        key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref cookieSequenceGen)}";
-        session = new(context.RequestServices.CreateScope().ServiceProvider);
-        session.SessionServiceProvider.GetRequiredService<SessionHolder>().Session = session;
-        context.Response.Cookies.Append(cookieName, key);
-        isNewSession = true;
-    }
-
-    ILogger<Program> logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation($"{context.Connection.Id}: {context.Request.Path}: {session}({session.GetHashCode()})");
-
-    session.RequestServiceProvider = context.RequestServices;
-    context.RequestServices = session;
-
-
-    try
-    {
-        await next?.Invoke();
-        if (isNewSession)
-        {
-            sessions.Set(key, session, entryOptions);
-        }
-    }
-    catch (Exception ex)
-    {
-        throw;
-    }
-});
+app.UseFullState();
 
 app.MapGet("/", async context =>
 {
@@ -112,35 +34,6 @@ app.MapGet("/", async context =>
 });
 
 app.Run();
-
-public class Session : IDisposable, IServiceProvider
-{
-    private readonly ILogger<Session> _logger;
-    internal static HashSet<Type> SessionalServices { get; set; } = new();
-    public IServiceProvider SessionServiceProvider { get; init; }
-    public IServiceProvider RequestServiceProvider { get; set; }
-
-    public Session(IServiceProvider serviceProvider) => 
-        (SessionServiceProvider, _logger) = (serviceProvider, serviceProvider.GetRequiredService<ILogger<Session>>());
-    public void Dispose()
-    {
-        _logger.LogInformation($"{this}({GetHashCode()}) disposed");
-    }
-
-    public object? GetService(Type serviceType)
-    {
-        if (SessionalServices.Contains(serviceType))
-        {
-            return SessionServiceProvider.GetService(serviceType);
-        }
-        return RequestServiceProvider.GetService(serviceType);
-    }
-}
-
-public class SessionHolder
-{
-    public Session Session { get; set; }
-}
 
 public class InfoProvider : IDisposable
 {
@@ -168,8 +61,8 @@ public class InfoProvider : IDisposable
 
     public string Get()
     {
-        Session session = _serviceProvider.GetRequiredService<Session>();
-        Another another = session.RequestServiceProvider.GetRequiredService<Another>();
+        IFullState session = _serviceProvider.GetRequiredService<IFullState>();
+        Another another = session.RequestServices.GetRequiredService<Another>();
         _logger.LogInformation($"{this}({GetHashCode()}) {another}({another.GetHashCode()})");
         List<int> result = new();
         while (_queue.TryDequeue(out int k))

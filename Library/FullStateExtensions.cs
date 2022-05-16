@@ -15,21 +15,21 @@ public static class FullStateExtensions
     public static IServiceCollection AddSessional(this IServiceCollection services, Type implementationType)
     {
         services.AddScoped(implementationType);
-        SessionalServiceProvider.SessionalServices.TryAdd(implementationType, 1);
+        FullState.SessionalServices.Add(implementationType);
         return services;
     }
 
     public static IServiceCollection AddSessional(this IServiceCollection services, Type serviceType, Func<IServiceProvider, object> implementationFactory)
     {
         services.AddScoped(serviceType, implementationFactory);
-        SessionalServiceProvider.SessionalServices.TryAdd(serviceType, 1);
+        FullState.SessionalServices.Add(serviceType);
         return services;
     }
 
     public static IServiceCollection AddSessional(this IServiceCollection services, Type serviceType, Type implementationType)
     {
         services.AddScoped(serviceType, implementationType);
-        SessionalServiceProvider.SessionalServices.TryAdd(serviceType, 1);
+        FullState.SessionalServices.Add(serviceType);
         return services;
     }
 
@@ -38,7 +38,7 @@ public static class FullStateExtensions
         where TImplementation : class, TService
     {
         services.AddScoped<TService, TImplementation>();
-        SessionalServiceProvider.SessionalServices.TryAdd(typeof(TService), 1);
+        FullState.SessionalServices.Add(typeof(TService));
         return services;
     }
 
@@ -47,7 +47,7 @@ public static class FullStateExtensions
         where TImplementation : class, TService
     {
         services.AddScoped<TService, TImplementation>(implementationFactory);
-        SessionalServiceProvider.SessionalServices.TryAdd(typeof(TService), 1);
+        FullState.SessionalServices.Add(typeof(TService));
         return services;
     }
 
@@ -55,7 +55,7 @@ public static class FullStateExtensions
         where TService : class
     {
         services.AddScoped<TService>();
-        SessionalServiceProvider.SessionalServices.TryAdd(typeof(TService), 1);
+        FullState.SessionalServices.Add(typeof(TService));
         return services;
     }
 
@@ -63,7 +63,7 @@ public static class FullStateExtensions
         where TService : class
     {
         services.AddScoped<TService>(implementationFactory);
-        SessionalServiceProvider.SessionalServices.TryAdd(typeof(TService), 1);
+        FullState.SessionalServices.Add(typeof(TService));
         return services;
     }
 
@@ -82,12 +82,18 @@ public static class FullStateExtensions
         postEvictionCallbackRegistration.State = typeof(FullStateExtensions);
         postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
         {
-            if(r is EvictionReason.Expired && s is Type stype && stype == typeof(FullStateExtensions) && v is SessionalServiceProvider disposable)
+            if(r is EvictionReason.Expired && s is Type stype && stype == typeof(FullStateExtensions) && v is FullState session
+                && session.SessionServiceProvider is IDisposable disposable)
             {
                 disposable.Dispose();
             }
         };
         _entryOptions.PostEvictionCallbacks.Add(postEvictionCallbackRegistration);
+
+        services.AddScoped<FullStateHolder>();
+        services.AddSessional<IFullState>(op => op.GetRequiredService<FullStateHolder>().FullState);
+
+
         return services;
     }
 
@@ -96,14 +102,14 @@ public static class FullStateExtensions
         app.Use(async (context, next) =>
         {
             IMemoryCache sessions = context.RequestServices.GetRequiredService<IMemoryCache>();
-            if(_checkSessions is null)
+            if (_checkSessions is null)
             {
                 lock (app)
                 {
                     if (_checkSessions is null)
                     {
                         _checkSessions = new(_fullStateOptions.ExpirationScanFrequency.TotalMilliseconds);
-                        _checkSessions.Elapsed += (s, e) => 
+                        _checkSessions.Elapsed += (s, e) =>
                         {
                             sessions.TryGetValue(string.Empty, out object dumb);
                         };
@@ -113,31 +119,29 @@ public static class FullStateExtensions
                 }
             }
             object? sessionObj = null;
-            SessionalServiceProvider? sessionalServiceProvider = null;
+            FullState? fullState = null;
             string key = context.Request.Cookies[_fullStateOptions.Cookie.Name];
             bool isNewSession = false;
-            if(
+            if (
                 key is null
                 || !sessions.TryGetValue(key, out sessionObj)
-                || (sessionalServiceProvider = sessionObj as SessionalServiceProvider) is null
+                || (fullState = sessionObj as FullState) is null
             )
             {
                 key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref _cookieSequenceGen)}";
-                sessionalServiceProvider = new SessionalServiceProvider
-                { 
-                    ScopedServiceProvider = context.RequestServices.CreateScope().ServiceProvider
-                };
+                fullState = new FullState(context.RequestServices.CreateScope().ServiceProvider);
+                fullState.SessionServiceProvider.GetRequiredService<FullStateHolder>().FullState = fullState;
                 context.Response.Cookies.Append(_fullStateOptions.Cookie.Name, key, _fullStateOptions.Cookie.Build(context));
                 isNewSession = true;
             }
-            sessionalServiceProvider!.SourceServiceProvider = context.RequestServices;
-            context.RequestServices = sessionalServiceProvider;
+            fullState!.RequestServices = context.RequestServices;
+            context.RequestServices = fullState;
             try
             {
                 await (next?.Invoke() ?? Task.CompletedTask);
                 if (isNewSession)
                 {
-                    sessions.Set(key, sessionalServiceProvider, _entryOptions);
+                    sessions.Set(key, fullState, _entryOptions);
                 }
             }
             catch (Exception)
@@ -147,5 +151,6 @@ public static class FullStateExtensions
         });
         return app;
     }
+
 
 }
