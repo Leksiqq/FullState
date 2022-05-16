@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Session;
 
-namespace Net.Leksi.Server;
+namespace Net.Leksi.FullState;
 
 public class FullStateOptions
 {

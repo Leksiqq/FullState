@@ -1,4 +1,4 @@
-﻿namespace Net.Leksi.Server;
+﻿namespace Net.Leksi.FullState;
 
 internal class FullStateHolder
 {

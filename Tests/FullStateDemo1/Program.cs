@@ -1,5 +1,5 @@
 using FullStateDemo;
-using Net.Leksi.Server;
+using Net.Leksi.FullState;
 
 var builder = WebApplication.CreateBuilder(args);
 

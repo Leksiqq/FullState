@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Net.Leksi.Server;
+namespace Net.Leksi.FullState;
 
 public static class FullStateExtensions
 {
