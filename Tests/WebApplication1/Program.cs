@@ -31,10 +31,10 @@ builder.Services.AddMemoryCache(op =>
 
 builder.Services.AddScoped<SessionHolder>();
 builder.Services.AddScoped<Session>(op => op.GetRequiredService<SessionHolder>().Session);
-Session.SessionalServices[typeof(Session)] = 0;
+Session.SessionalServices.Add(typeof(Session));
 
 builder.Services.AddScoped<InfoProvider>();
-Session.SessionalServices[typeof(InfoProvider)] = 0;
+Session.SessionalServices.Add(typeof(InfoProvider));
 
 builder.Services.AddScoped<Another>();
 
@@ -117,7 +117,7 @@ app.Run();
 public class Session : IDisposable, IServiceProvider
 {
     private readonly ILogger<Session> _logger;
-    internal static Dictionary<Type, int> SessionalServices { get; set; } = new();
+    internal static HashSet<Type> SessionalServices { get; set; } = new();
     public IServiceProvider SessionServiceProvider { get; init; }
     public IServiceProvider RequestServiceProvider { get; set; }
 
@@ -134,7 +134,7 @@ public class Session : IDisposable, IServiceProvider
 
     public object? GetService(Type serviceType)
     {
-        if (SessionalServices.ContainsKey(serviceType))
+        if (SessionalServices.Contains(serviceType))
         {
             return SessionServiceProvider.GetService(serviceType);
         }
