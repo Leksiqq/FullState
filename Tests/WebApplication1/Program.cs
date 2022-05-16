@@ -71,13 +71,16 @@ app.Use(async (context, next) =>
     {
         key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref cookieSequenceGen)}";
         session = new(context.RequestServices.CreateScope().ServiceProvider);
+        session.SessionServiceProvider.GetRequiredService<SessionHolder>().Session = session;
         context.Response.Cookies.Append(cookieName, key);
         isNewSession = true;
     }
 
+    session.RequestServiceProvider = context.RequestServices;
+    context.RequestServices.GetRequiredService<SessionHolder>().Session = session;
+
     ILogger<Program> logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
     logger.LogInformation($"{context.Connection.Id}: {context.Request.Path}: {session}({session.GetHashCode()})");
-    context.RequestServices.GetRequiredService<SessionHolder>().Session = session;
 
     try
     {
@@ -108,6 +111,7 @@ public class Session : IDisposable
 {
     private readonly ILogger<Session> _logger;
     public IServiceProvider SessionServiceProvider { get; init; }
+    public IServiceProvider RequestServiceProvider { get; set; }
 
     public Session(IServiceProvider serviceProvider) => 
         (SessionServiceProvider, _logger) = (serviceProvider, serviceProvider.GetRequiredService<ILogger<Session>>());
@@ -152,7 +156,8 @@ public class InfoProvider : IDisposable
 
     public string Get()
     {
-        Another another = _serviceProvider.GetRequiredService<Another>();
+        Session session = _serviceProvider.GetRequiredService<SessionHolder>().Session;
+        Another another = session.RequestServiceProvider.GetRequiredService<Another>();
         _logger.LogInformation($"{this}({GetHashCode()}) {another}({another.GetHashCode()})");
         List<int> result = new();
         while (_queue.TryDequeue(out int k))
