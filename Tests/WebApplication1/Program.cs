@@ -105,11 +105,10 @@ app.Use(async (context, next) =>
 
 app.MapGet("/", async context =>
 {
-    Session session = context.RequestServices.GetRequiredService<Session>();
     Another another = context.RequestServices.GetRequiredService<Another>();
-    await context.Response.WriteAsync($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] Hello, World! {session}({session.GetHashCode()})" 
+    await context.Response.WriteAsync($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] Hello, World! " 
         + $", controller {another}({another.GetHashCode()}), "
-        + session.SessionServiceProvider.GetRequiredService<InfoProvider>().Get());
+        + context.RequestServices.GetRequiredService<InfoProvider>().Get());
 });
 
 app.Run();
