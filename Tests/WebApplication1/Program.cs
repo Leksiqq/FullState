@@ -125,10 +125,6 @@ public class Session : IDisposable, IServiceProvider
         (SessionServiceProvider, _logger) = (serviceProvider, serviceProvider.GetRequiredService<ILogger<Session>>());
     public void Dispose()
     {
-        if(SessionServiceProvider is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
         _logger.LogInformation($"{this}({GetHashCode()}) disposed");
     }
 
