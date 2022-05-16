@@ -11,7 +11,8 @@ PostEvictionCallbackRegistration postEvictionCallbackRegistration = new PostEvic
 postEvictionCallbackRegistration.State = typeof(Program);
 postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
 {
-    if (r is EvictionReason.Expired && s is Type sType && sType == typeof(Program) && v is IDisposable disposable)
+    if (r is EvictionReason.Expired && s is Type sType && sType == typeof(Program) && v is Session session 
+        && session.SessionServiceProvider is IDisposable disposable)
     {
         disposable.Dispose();
     }
@@ -29,7 +30,12 @@ builder.Services.AddMemoryCache(op =>
 });
 
 builder.Services.AddScoped<SessionHolder>();
+builder.Services.AddScoped<Session>(op => op.GetRequiredService<SessionHolder>().Session);
+Session.SessionalServices[typeof(Session)] = 0;
+
 builder.Services.AddScoped<InfoProvider>();
+Session.SessionalServices[typeof(InfoProvider)] = 0;
+
 builder.Services.AddScoped<Another>();
 
 builder.Logging.ClearProviders();
@@ -76,11 +82,12 @@ app.Use(async (context, next) =>
         isNewSession = true;
     }
 
-    session.RequestServiceProvider = context.RequestServices;
-    context.RequestServices.GetRequiredService<SessionHolder>().Session = session;
-
     ILogger<Program> logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
     logger.LogInformation($"{context.Connection.Id}: {context.Request.Path}: {session}({session.GetHashCode()})");
+
+    session.RequestServiceProvider = context.RequestServices;
+    context.RequestServices = session;
+
 
     try
     {
@@ -98,7 +105,7 @@ app.Use(async (context, next) =>
 
 app.MapGet("/", async context =>
 {
-    Session session = context.RequestServices.GetRequiredService<SessionHolder>().Session;
+    Session session = context.RequestServices.GetRequiredService<Session>();
     Another another = context.RequestServices.GetRequiredService<Another>();
     await context.Response.WriteAsync($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] Hello, World! {session}({session.GetHashCode()})" 
         + $", controller {another}({another.GetHashCode()}), "
@@ -107,9 +114,10 @@ app.MapGet("/", async context =>
 
 app.Run();
 
-public class Session : IDisposable
+public class Session : IDisposable, IServiceProvider
 {
     private readonly ILogger<Session> _logger;
+    internal static Dictionary<Type, int> SessionalServices { get; set; } = new();
     public IServiceProvider SessionServiceProvider { get; init; }
     public IServiceProvider RequestServiceProvider { get; set; }
 
@@ -122,6 +130,15 @@ public class Session : IDisposable
             disposable.Dispose();
         }
         _logger.LogInformation($"{this}({GetHashCode()}) disposed");
+    }
+
+    public object? GetService(Type serviceType)
+    {
+        if (SessionalServices.ContainsKey(serviceType))
+        {
+            return SessionServiceProvider.GetService(serviceType);
+        }
+        return RequestServiceProvider.GetService(serviceType);
     }
 }
 
@@ -156,7 +173,7 @@ public class InfoProvider : IDisposable
 
     public string Get()
     {
-        Session session = _serviceProvider.GetRequiredService<SessionHolder>().Session;
+        Session session = _serviceProvider.GetRequiredService<Session>();
         Another another = session.RequestServiceProvider.GetRequiredService<Another>();
         _logger.LogInformation($"{this}({GetHashCode()}) {another}({another.GetHashCode()})");
         List<int> result = new();
