@@ -11,17 +11,18 @@
 	  <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
 	  <Description>
-		  A library for a full state server support.
+		  A library for a full state server support using session-lifetime Dependency Injection services.
 	  </Description>
 	  <GenerateDocumentationFile>True</GenerateDocumentationFile>
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <PackageId>$(AssemblyName)</PackageId>
 	  <Authors>Alexey leksiq Zakharov</Authors>
 	  <RepositoryUrl>https://sourceforge.net/p/fullstate/code</RepositoryUrl>
-	  <RepositoryUrl>https://github.com/Leksiqq/FullState</RepositoryUrl>
 	  <PackageProjectUrl>https://fullstate.sourceforge.io/</PackageProjectUrl>
 	  <PackageTags>ASP.NET;Dependency Injection;Full State Server</PackageTags>
 	  <OutputType>Library</OutputType>
+	  <PackageReadmeFile>readme.md</PackageReadmeFile>
+	  <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <Target Name="CopyPackage" AfterTargets="Pack">
@@ -34,6 +35,14 @@
     <PackageReference Include="Microsoft.AspNetCore.Session" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Update="readme.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

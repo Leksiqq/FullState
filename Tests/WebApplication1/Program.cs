@@ -62,7 +62,9 @@ public class InfoProvider : IDisposable
     {
         IFullState session = _serviceProvider.GetRequiredService<IFullState>();
         Another another = session.RequestServices.GetRequiredService<Another>();
+        InfoProvider infoProvider = session.RequestServices.GetRequiredService<InfoProvider>();
         _logger.LogInformation($"{this}({GetHashCode()}) {another}({another.GetHashCode()})");
+        _logger.LogInformation($"{infoProvider}({infoProvider.GetHashCode()})");
         List<int> result = new();
         while (_queue.TryDequeue(out int k))
         {
@@ -83,6 +85,7 @@ public class InfoProvider : IDisposable
 public class Another : IDisposable
 {
     private readonly ILogger<Another> _logger;
+    private InfoProvider _infoProvider;
 
     public Another(ILogger<Another> logger) => _logger = logger;
     public void Dispose()

@@ -23,6 +23,60 @@ public static class FullStateExtensions
 
     /// <summary>
     /// <para xml:lang="ru">
+    /// Добавляет инфраструктуру, необходимую для full state сервера
+    /// </para>
+    /// <para xml:lang="en">
+    /// Adds the infrastructure needed for a full state server
+    /// </para>
+    /// </summary>
+    /// <param name="services">
+    /// <para xml:lang="ru">
+    /// Заданная коллекция
+    /// </para>
+    /// <para xml:lang="en">
+    /// Given collection
+    /// </para>
+    /// </param>
+    /// <param name="configure">
+    /// <para xml:lang="ru">
+    /// Предоставленные параметры для настройки
+    /// </para>
+    /// <para xml:lang="en">
+    /// Provided options for customization
+    /// </para>
+    /// </param>
+    /// <returns></returns>
+    public static IServiceCollection AddFullState(this IServiceCollection services, Action<FullStateOptions>? configure = null)
+    {
+        configure?.Invoke(_fullStateOptions);
+        if (!services.Any(sd => sd.ServiceType == typeof(IMemoryCache)))
+        {
+            services.AddMemoryCache(op =>
+            {
+                op.ExpirationScanFrequency = _fullStateOptions.ExpirationScanFrequency;
+            });
+        }
+        _entryOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(_fullStateOptions.IdleTimeout);
+        PostEvictionCallbackRegistration postEvictionCallbackRegistration = new PostEvictionCallbackRegistration();
+        postEvictionCallbackRegistration.State = typeof(FullStateExtensions);
+        postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
+        {
+            if (r is EvictionReason.Expired && s is Type stype && stype == typeof(FullStateExtensions) && v is FullState session
+                && session.SessionServiceProvider is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        };
+        _entryOptions.PostEvictionCallbacks.Add(postEvictionCallbackRegistration);
+
+        services.AddScoped<FullStateHolder>();
+        services.AddSessional<IFullState>(op => op.GetRequiredService<FullStateHolder>().FullState);
+
+
+        return services;
+    }
+    /// <summary>
+    /// <para xml:lang="ru">
     /// Добавляет службу с ограниченной сессией областью
     /// </para>
     /// <para xml:lang="en">
@@ -293,60 +347,6 @@ public static class FullStateExtensions
     {
         services.AddScoped<TService>(implementationFactory);
         FullState.SessionalServices.Add(typeof(TService));
-        return services;
-    }
-    /// <summary>
-    /// <para xml:lang="ru">
-    /// Добавляет инфраструктуру, необходимую для full state сервера
-    /// </para>
-    /// <para xml:lang="en">
-    /// Adds the infrastructure needed for a full state server
-    /// </para>
-    /// </summary>
-    /// <param name="services">
-    /// <para xml:lang="ru">
-    /// Заданная коллекция
-    /// </para>
-    /// <para xml:lang="en">
-    /// Given collection
-    /// </para>
-    /// </param>
-    /// <param name="configure">
-    /// <para xml:lang="ru">
-    /// Предоставленные параметры для настройки
-    /// </para>
-    /// <para xml:lang="en">
-    /// Provided options for customization
-    /// </para>
-    /// </param>
-    /// <returns></returns>
-    public static IServiceCollection AddFullState(this IServiceCollection services, Action<FullStateOptions>? configure = null)
-    {
-        configure?.Invoke(_fullStateOptions);
-        if (!services.Any(sd => sd.ServiceType == typeof(IMemoryCache)))
-        {
-            services.AddMemoryCache(op =>
-            {
-                op.ExpirationScanFrequency = _fullStateOptions.ExpirationScanFrequency;
-            });
-        }
-        _entryOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(_fullStateOptions.IdleTimeout);
-        PostEvictionCallbackRegistration postEvictionCallbackRegistration = new PostEvictionCallbackRegistration();
-        postEvictionCallbackRegistration.State = typeof(FullStateExtensions);
-        postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
-        {
-            if(r is EvictionReason.Expired && s is Type stype && stype == typeof(FullStateExtensions) && v is FullState session
-                && session.SessionServiceProvider is IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
-        };
-        _entryOptions.PostEvictionCallbacks.Add(postEvictionCallbackRegistration);
-
-        services.AddScoped<FullStateHolder>();
-        services.AddSessional<IFullState>(op => op.GetRequiredService<FullStateHolder>().FullState);
-
-
         return services;
     }
     /// <summary>

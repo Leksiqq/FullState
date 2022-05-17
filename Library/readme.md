@@ -1,0 +1,33 @@
+﻿
+# Net.Leksi.FullState
+
+The library provides the standard use of the Dependency Injection mechanism in ASP.NET Core applications with persistence state between requests during the session (full state). 
+Allows session context services to be registered with the DI container and retrieved from the container in the normal way. 
+Also provides the ability to access request context services in session context service methods.
+
+## Prerequisites
+1. Target platform: .NET 6.0
+2. Target CPU: Any
+
+## Usage
+
+	var builder = WebApplication.CreateBuilder(args);
+
+	...
+
+	builder.Services.AddFullState();
+
+	builder.Services.AddSessional<...>();
+	builder.Services.AddSessional<...>();
+
+	...
+
+	var app = builder.Build();
+
+	app.UseFullState();
+
+After registering some services as sessional they have session lifetime and can be obtained in standard way: IServiceProvider.GetService(...)
+
+
+## API
+See [Documentation](https://fullstate.sourceforge.io/index_en.html)
