@@ -1,4 +1,5 @@
-﻿using Net.Leksi.FullState;
+﻿using Microsoft.AspNetCore.Diagnostics;
+using Net.Leksi.FullState;
 
 namespace FullStateTestProject;
 
@@ -8,6 +9,8 @@ public class Server
     private WebApplication app;
     public ManualResetEventSlim IsRunning { get; init; } = new();
     public Uri Uri { get; private set; } 
+
+    public StatHolder StatHolder { get; init; } = new();
 
     public async Task StopAsync()
     {
@@ -30,9 +33,7 @@ public class Server
 
         builder.Services.AddScoped<Another>();
 
-        StatHolder statHolder1 = new StatHolder();
-
-        builder.Services.AddSingleton<StatHolder>(op => statHolder1);
+        builder.Services.AddSingleton<StatHolder>(op => StatHolder);
 
         builder.Services.AddScoped<ClientHolder>();
 
@@ -40,19 +41,21 @@ public class Server
 
         app.UseFullState();
 
-        app.MapGet("/{client}", async (HttpContext context, string client) =>
+        app.MapGet("/{client}/{request}", async (HttpContext context, int client, int request) =>
         {
-            StatHolder statHolder = context.RequestServices.GetRequiredService<StatHolder>();
-            context.RequestServices.GetRequiredService<ClientHolder>().Client = client;
-
-            statHolder.CommonValues[client] = new AssertHolder { Client = client, Session = context.Request.Cookies["qq"] };
-
             IFullState session = context.RequestServices.GetRequiredService<IFullState>();
+
+            StatHolder statHolder = context.RequestServices.GetRequiredService<StatHolder>();
+            ClientHolder clientHolder = session.RequestServices.GetRequiredService<ClientHolder>();
+            clientHolder.Client = client;
+            clientHolder.Request = request;
+            clientHolder.Session = context.Request.Cookies["qq"];
 
             statHolder.Asserts.Enqueue(new AssertHolder
             {
-                Client = statHolder.CommonValues[client].Client,
-                Session = statHolder.CommonValues[client].Session,
+                Client = clientHolder.Client,
+                Request = clientHolder.Request,
+                Session = clientHolder.Session,
                 Selector = "session",
                 Value = session.GetHashCode()
             });
@@ -61,8 +64,9 @@ public class Server
 
             statHolder.Asserts.Enqueue(new AssertHolder
             {
-                Client = statHolder.CommonValues[client].Client,
-                Session = statHolder.CommonValues[client].Session,
+                Client = clientHolder.Client,
+                Request = clientHolder.Request,
+                Session = clientHolder.Session,
                 Selector = "another1",
                 Value = another1.GetHashCode()
             });
@@ -73,8 +77,9 @@ public class Server
 
             statHolder.Asserts.Enqueue(new AssertHolder
             {
-                Client = statHolder.CommonValues[client].Client,
-                Session = statHolder.CommonValues[client].Session,
+                Client = clientHolder.Client,
+                Request = clientHolder.Request,
+                Session = clientHolder.Session,
                 Selector = "another2",
                 Value = another2.GetHashCode()
             });
@@ -85,8 +90,9 @@ public class Server
 
             statHolder.Asserts.Enqueue(new AssertHolder
             {
-                Client = statHolder.CommonValues[client].Client,
-                Session = statHolder.CommonValues[client].Session,
+                Client = clientHolder.Client,
+                Request = clientHolder.Request,
+                Session = clientHolder.Session,
                 Selector = "infoProvider1",
                 Value = infoProvider1.GetHashCode()
             });
@@ -97,15 +103,16 @@ public class Server
 
             statHolder.Asserts.Enqueue(new AssertHolder
             {
-                Client = statHolder.CommonValues[client].Client,
-                Session = statHolder.CommonValues[client].Session,
+                Client = clientHolder.Client,
+                Request = clientHolder.Request,
+                Session = clientHolder.Session,
                 Selector = "infoProvider2",
                 Value = infoProvider2.GetHashCode()
             });
 
             infoProvider2.DoSomething();
 
-            await context.Response.WriteAsync("Hello, World!");
+            await context.Response.WriteAsync($"#{request} Hello, Client #{client}!");
         });
 
         app.Lifetime.ApplicationStarted.Register(() => 

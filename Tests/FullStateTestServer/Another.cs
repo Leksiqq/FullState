@@ -16,12 +16,13 @@ public class Another : IDisposable
         IFullState session = _services.GetRequiredService<IFullState>();
 
         StatHolder statHolder = _services.GetRequiredService<StatHolder>();
-        string client = session.RequestServices.GetRequiredService<ClientHolder>().Client;
+        ClientHolder clientHolder = session.RequestServices.GetRequiredService<ClientHolder>();
 
         statHolder.Asserts.Enqueue(new AssertHolder
         {
-            Client = statHolder.CommonValues[client].Client,
-            Session = statHolder.CommonValues[client].Session,
+            Client = clientHolder.Client,
+            Request = clientHolder.Request,
+            Session = clientHolder.Session,
             Selector = "session",
             Value = session.GetHashCode()
         });
@@ -30,8 +31,9 @@ public class Another : IDisposable
 
         statHolder.Asserts.Enqueue(new AssertHolder
         {
-            Client = statHolder.CommonValues[client].Client,
-            Session = statHolder.CommonValues[client].Session,
+            Client = clientHolder.Client,
+            Request = clientHolder.Request,
+            Session = clientHolder.Session,
             Selector = "infoProvider3",
             Value = infoProvider3.GetHashCode()
         });
@@ -40,8 +42,9 @@ public class Another : IDisposable
 
         statHolder.Asserts.Enqueue(new AssertHolder
         {
-            Client = statHolder.CommonValues[client].Client,
-            Session = statHolder.CommonValues[client].Session,
+            Client = clientHolder.Client,
+            Request = clientHolder.Request,
+            Session = clientHolder.Session,
             Selector = "infoProvider4",
             Value = infoProvider4.GetHashCode()
         });

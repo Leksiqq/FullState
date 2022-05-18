@@ -36,20 +36,40 @@ public class Tests
         server.IsRunning.Wait();
 
         Trace.WriteLine("done");
-        HttpClient client = new HttpClient();
 
-        client.BaseAddress = server.Uri;
+        Task[] clients = new Task[2];
+        for(int i = 0; i < clients.Length; i++)
+        {
+            int clientNum = i;
+            clients[i] = Task.Run(async () =>
+            {
+                HttpClient client = new HttpClient();
 
-        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "/1");
+                client.BaseAddress = server.Uri;
 
-        HttpResponseMessage response = await client.SendAsync(request);
+                for(int j = 0; j < 2; j++)
+                {
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, $"/{clientNum}/{j}");
 
-        Trace.WriteLine(await response.Content.ReadAsStringAsync());
+                    HttpResponseMessage response = await client.SendAsync(request);
+
+                    Trace.WriteLine(response.StatusCode);
+                    Trace.WriteLine(await response.Content.ReadAsStringAsync());
+                }
+
+            });
+        }
+
+        await Task.WhenAll(clients);
 
         await server.StopAsync();
         await serverTask;
 
-        await Task.CompletedTask;
+        while(server.StatHolder.Asserts.TryDequeue(out AssertHolder assertHolder))
+        {
+            Trace.WriteLine(assertHolder);
+        }
+
     }
 
 }

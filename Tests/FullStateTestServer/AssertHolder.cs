@@ -1,7 +1,13 @@
 ﻿public class AssertHolder
 {
-    public string Client { get; set; }
+    public int Client { get; set; }
+    public int Request { get; set; }
     public string Session { get; set; }
     public string Selector { get; set; }
     public object Value { get; set; }
+
+    public override string ToString()
+    {
+        return $"{{Client: {Client}, Request: {Request}, Session: {Session}, Selector: {Selector}, Value: {Value}}}";
+    }
 }
