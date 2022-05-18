@@ -399,6 +399,7 @@ public static class FullStateExtensions
                 isNewSession = true;
             }
             fullState!.RequestServices = context.RequestServices;
+            context.RequestServices.GetRequiredService<FullStateHolder>().FullState = fullState;
             context.RequestServices = fullState;
             try
             {
