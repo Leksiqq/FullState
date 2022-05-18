@@ -45,6 +45,8 @@ public class Server
         {
             IFullState session = context.RequestServices.GetRequiredService<IFullState>();
 
+            Console.WriteLine($"context: {context.RequestServices.GetHashCode()}, {session.RequestServices.GetHashCode()}");
+
             StatHolder statHolder = context.RequestServices.GetRequiredService<StatHolder>();
             ClientHolder clientHolder = session.RequestServices.GetRequiredService<ClientHolder>();
             clientHolder.Client = client;

@@ -4,7 +4,7 @@
     public int Request { get; set; }
     public string Session { get; set; }
     public string Selector { get; set; }
-    public object Value { get; set; }
+    public int Value { get; set; }
 
     public override string ToString()
     {

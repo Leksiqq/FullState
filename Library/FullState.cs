@@ -1,21 +1,17 @@
 ﻿namespace Net.Leksi.FullState;
 
-internal class FullState : IFullState, IServiceProvider
+internal class FullState : IFullState, IDisposable
 {
-    internal static HashSet<Type> SessionalServices { get; private set; } = new();
+    public IServiceProvider RequestServices { get; internal set; } = null!;
 
-    internal IServiceProvider SessionServiceProvider { get; set; }
-    public IServiceProvider RequestServices { get; set; } = null!;
+    public IServiceProvider SessionServices { get; internal set; } = null!;
 
-    public FullState(IServiceProvider serviceProvider) => SessionServiceProvider = serviceProvider;
-
-    public object? GetService(Type serviceType)
+    public void Dispose()
     {
-        if (SessionalServices.Contains(serviceType))
+        Console.WriteLine($"Dispose({GetHashCode()})");
+        if(SessionServices is IDisposable disposable)
         {
-            return SessionServiceProvider.GetService(serviceType);
+            disposable.Dispose();
         }
-        return RequestServices.GetService(serviceType);
     }
-
 }

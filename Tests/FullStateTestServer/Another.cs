@@ -27,7 +27,7 @@ public class Another : IDisposable
             Value = session.GetHashCode()
         });
 
-        InfoProvider infoProvider3 = _services.GetRequiredService<InfoProvider>();
+        InfoProvider infoProvider3 = session.SessionServices.GetRequiredService<InfoProvider>();
 
         statHolder.Asserts.Enqueue(new AssertHolder
         {

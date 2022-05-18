@@ -10,7 +10,7 @@ builder.Services.AddFullState(op =>
     op.IdleTimeout = TimeSpan.FromSeconds(20);
 });
 
-builder.Services.AddSessional<InfoProvider>();
+builder.Services.AddScoped<InfoProvider>();
 
 builder.Services.AddScoped<Another>();
 
@@ -26,10 +26,11 @@ app.UseFullState();
 
 app.MapGet("/", async context =>
 {
+    IFullState session = context.RequestServices.GetRequiredService<IFullStateAccessor>().Instance;
     Another another = context.RequestServices.GetRequiredService<Another>();
     await context.Response.WriteAsync($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] Hello, World! " 
         + $", controller {another}({another.GetHashCode()}), "
-        + context.RequestServices.GetRequiredService<InfoProvider>().Get());
+        + session.SessionServices.GetRequiredService<InfoProvider>().Get());
 });
 
 app.Run();
@@ -60,7 +61,7 @@ public class InfoProvider : IDisposable
 
     public string Get()
     {
-        IFullState session = _serviceProvider.GetRequiredService<IFullState>();
+        IFullState session = _serviceProvider.GetRequiredService<IFullStateAccessor>().Instance;
         Another another = session.RequestServices.GetRequiredService<Another>();
         InfoProvider infoProvider = session.RequestServices.GetRequiredService<InfoProvider>();
         _logger.LogInformation($"{this}({GetHashCode()}) {another}({another.GetHashCode()})");
@@ -86,8 +87,12 @@ public class Another : IDisposable
 {
     private readonly ILogger<Another> _logger;
     private InfoProvider _infoProvider;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IFullState _session;
 
-    public Another(ILogger<Another> logger) => _logger = logger;
+    public Another(IServiceProvider serviceProvider) => 
+        (_serviceProvider, _logger, _session) = (serviceProvider, serviceProvider.GetRequiredService<ILogger<Another>>(), 
+            serviceProvider.GetRequiredService<IFullStateAccessor>().Instance);
     public void Dispose()
     {
         _logger.LogInformation($"{this}({GetHashCode()}) disposed");

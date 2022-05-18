@@ -45,4 +45,13 @@ public interface IFullState
     /// </para>
     /// </summary>
     IServiceProvider RequestServices { get; }
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Свойство, содержащее контейнер DI сессии
+    /// </para>
+    /// <para xml:lang="en">
+    /// Property containing the session's DI container
+    /// </para>
+    /// </summary>
+    IServiceProvider SessionServices { get; }
 }
