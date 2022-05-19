@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -17,6 +18,12 @@ public class Tests
     {
         Trace.Listeners.Add(new ConsoleTraceListener());
         Trace.AutoFlush = true;
+
+        Process[] processes = Process.GetProcessesByName("FullStateTestServer");
+        foreach (Process process in processes)
+        {
+            process.Kill();
+        }
     }
 
     [SetUp]
@@ -46,7 +53,12 @@ public class Tests
                     HttpResponseMessage response = await client.SendAsync(request);
 
                     Trace.WriteLine(response.StatusCode);
-                    Trace.WriteLine(await response.Content.ReadAsStringAsync());
+                    string data = await response.Content.ReadAsStringAsync();
+                    Trace.WriteLine(data.Substring(0, 100));
+                    foreach (AssertHolder assert in JsonSerializer.Deserialize<List<AssertHolder>>(data))
+                    {
+                        asserts.Enqueue(assert);
+                    }
                 }
 
             });

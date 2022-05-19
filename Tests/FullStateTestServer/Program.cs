@@ -1,6 +1,6 @@
 ﻿using FullStateTestServer;
 using Net.Leksi.FullState;
-
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(new string[] { });
 
@@ -36,7 +36,10 @@ app.MapGet("/{client}/{request}", async (HttpContext context, int client, int re
 
     new BaseProbe(context.RequestServices).DoSomething(string.Empty);
 
-    await context.Response.WriteAsJsonAsync(context.RequestServices.GetRequiredService<List<AssertHolder>>());
+    JsonSerializerOptions options = new();
+    
+
+    await context.Response.WriteAsJsonAsync(context.RequestServices.GetRequiredService<List<AssertHolder>>(), options);
 });
 
 app.Run();
