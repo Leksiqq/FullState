@@ -20,6 +20,7 @@ public static class FullStateExtensions
     private static MemoryCacheEntryOptions _entryOptions = null!;
     private static System.Timers.Timer _checkSessions = null!;
     private static int _cookieSequenceGen = 0;
+    private static int _rootServiceProviderCheckState = 0;
 
     /// <summary>
     /// <para xml:lang="ru">
@@ -61,15 +62,16 @@ public static class FullStateExtensions
         postEvictionCallbackRegistration.State = typeof(FullStateExtensions);
         postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
         {
-            if (r is EvictionReason.Expired && s is Type stype && stype == typeof(FullStateExtensions) && v is FullState session)
+            if (r is EvictionReason.Expired && s is Type stype && stype == typeof(FullStateExtensions) 
+                && v is SessionHolder session && session.ServiceProvider is IDisposable disposable)
             {
-                session.Dispose();
+                disposable.Dispose();
             }
         };
         _entryOptions.PostEvictionCallbacks.Add(postEvictionCallbackRegistration);
 
-        services.AddScoped<FullStateAccessor>();
-        services.AddScoped<IFullStateAccessor>(op => op.GetRequiredService<FullStateAccessor>());
+        services.AddScoped<IFullState, FullState>();
+        services.AddSingleton<SingletonProbe>();
 
 
         return services;
@@ -108,29 +110,59 @@ public static class FullStateExtensions
                 }
             }
             object? sessionObj = null;
-            FullState? fullState = null;
+            SessionHolder? session = null!;
             string key = context.Request.Cookies[_fullStateOptions.Cookie.Name];
             bool isNewSession = false;
+            FullState sessionFullState = null!;
+            FullState contextFullState = (context.RequestServices.GetRequiredService<IFullState>() as FullState)!;
+            FullState singletonFullState = null!;
+            if (_rootServiceProviderCheckState != 2)
+            {
+
+            }
+            try
+            {
+                singletonFullState = context.RequestServices.GetRequiredService<SingletonProbe>().ServiceProvider.GetRequiredService<IFullState>() as FullState;
+                _rootServiceProviderCheckState = 1;
+            }
+            catch (InvalidOperationException)
+            {
+                _rootServiceProviderCheckState = 2;
+            }
             if (
                 key is null
                 || !sessions.TryGetValue(key, out sessionObj)
-                || (fullState = sessionObj as FullState) is null
+                || (session = sessionObj as SessionHolder) is null
             )
             {
                 key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref _cookieSequenceGen)}";
-                fullState = new FullState { SessionServices = context.RequestServices.CreateScope().ServiceProvider };
-                fullState.SessionServices.GetRequiredService<FullStateAccessor>().Instance = fullState;
+                session = new SessionHolder(context.RequestServices.CreateScope().ServiceProvider);
+                sessionFullState = (session!.ServiceProvider!.GetRequiredService<IFullState>() as FullState)!;
+                sessionFullState.SessionServices = session!.ServiceProvider!;
+                if (singletonFullState is { })
+                {
+                    singletonFullState.SessionServices = session!.ServiceProvider!;
+                }
                 context.Response.Cookies.Append(_fullStateOptions.Cookie.Name, key, _fullStateOptions.Cookie.Build(context));
                 isNewSession = true;
             }
-            fullState!.RequestServices = context.RequestServices;
-            context.RequestServices.GetRequiredService<FullStateAccessor>().Instance = fullState;
+            else
+            {
+                sessionFullState = (session!.ServiceProvider!.GetRequiredService<IFullState>() as FullState)!;
+            }
+            sessionFullState.RequestServices = context.RequestServices;
+            contextFullState.RequestServices = context.RequestServices;
+            contextFullState.SessionServices = session!.ServiceProvider!;
+            if (singletonFullState is { })
+            {
+                singletonFullState.RequestServices = context.RequestServices;
+            }
             try
             {
                 await (next?.Invoke() ?? Task.CompletedTask);
                 if (isNewSession)
                 {
-                    sessions.Set(key, fullState, _entryOptions);
+                    sessions.Set(key, session, _entryOptions);
                 }
             }
             catch (Exception)

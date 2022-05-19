@@ -1,4 +1,7 @@
-﻿namespace Net.Leksi.FullState;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Net.Leksi.FullState;
 
 /// <summary>
 /// <para xml:lang="ru">
@@ -54,4 +57,10 @@ public interface IFullState
     /// </para>
     /// </summary>
     IServiceProvider SessionServices { get; }
+
+    public static IFullState Extract(IServiceProvider serviceProvider)
+    {
+        IHttpContextAccessor ca = serviceProvider.GetRequiredService<IHttpContextAccessor>();
+        return ca.HttpContext.RequestServices.GetRequiredService<IFullState>();
+    }
 }

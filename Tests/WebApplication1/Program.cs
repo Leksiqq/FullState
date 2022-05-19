@@ -1,40 +1,52 @@
 using Net.Leksi.FullState;
 using System.Collections.Concurrent;
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddFullState(op =>
+new Server().Run(args);
+internal class Server
 {
-    op.Cookie.Name = "qq";
-    op.ExpirationScanFrequency = TimeSpan.FromSeconds(1);
-    op.IdleTimeout = TimeSpan.FromSeconds(20);
-});
 
-builder.Services.AddScoped<InfoProvider>();
+    internal void Run(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<Another>();
+        builder.Services.AddFullState(op =>
+        {
+            op.Cookie.Name = "qq";
+            op.ExpirationScanFrequency = TimeSpan.FromSeconds(1);
+            op.IdleTimeout = TimeSpan.FromSeconds(20);
+        });
 
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole(op =>
-{
-    op.TimestampFormat = "[HH:mm:ss:fff] ";
-});
+        builder.Services.AddSingleton<Singleton>();
+        builder.Services.AddScoped<InfoProvider>();
 
-var app = builder.Build();
+        builder.Services.AddScoped<Another>();
+        builder.Services.AddScoped<object>();
 
-app.UseFullState();
+        builder.Logging.ClearProviders();
+        builder.Logging.AddConsole(op =>
+        {
+            op.TimestampFormat = "[HH:mm:ss:fff] ";
+        });
 
-app.MapGet("/", async context =>
-{
-    IFullState session = context.RequestServices.GetRequiredService<IFullStateAccessor>().Instance;
-    Another another = context.RequestServices.GetRequiredService<Another>();
-    await context.Response.WriteAsync($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] Hello, World! " 
-        + $", controller {another}({another.GetHashCode()}), "
-        + session.SessionServices.GetRequiredService<InfoProvider>().Get());
-});
+        var app = builder.Build();
 
-app.Run();
+        app.UseFullState();
 
+        app.MapGet("/", async context =>
+        {
+            IFullState session = context.RequestServices.GetRequiredService<IFullState>();
+            Singleton singleton = context.RequestServices.GetRequiredService<Singleton>();
+            singleton.Run();
+            Another another = context.RequestServices.GetRequiredService<Another>();
+            await context.Response.WriteAsync($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] Hello, World! "
+                + $", controller {another}({another.GetHashCode()}), "
+                + session.SessionServices.GetRequiredService<InfoProvider>().Get());
+        });
+
+        app.Run();
+
+    }
+}
 public class InfoProvider : IDisposable
 {
     private ConcurrentQueue<int> _queue = new();
@@ -61,7 +73,7 @@ public class InfoProvider : IDisposable
 
     public string Get()
     {
-        IFullState session = _serviceProvider.GetRequiredService<IFullStateAccessor>().Instance;
+        IFullState session = _serviceProvider.GetRequiredService<IFullState>();
         Another another = session.RequestServices.GetRequiredService<Another>();
         InfoProvider infoProvider = session.RequestServices.GetRequiredService<InfoProvider>();
         _logger.LogInformation($"{this}({GetHashCode()}) {another}({another.GetHashCode()})");
@@ -92,10 +104,24 @@ public class Another : IDisposable
 
     public Another(IServiceProvider serviceProvider) => 
         (_serviceProvider, _logger, _session) = (serviceProvider, serviceProvider.GetRequiredService<ILogger<Another>>(), 
-            serviceProvider.GetRequiredService<IFullStateAccessor>().Instance);
+            serviceProvider.GetRequiredService<IFullState>());
     public void Dispose()
     {
         _logger.LogInformation($"{this}({GetHashCode()}) disposed");
+    }
+}
+
+public class Singleton
+{
+    private readonly IServiceProvider _serviceProvider;
+    public Singleton(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public void Run()
+    {
+        IFullState session = _serviceProvider.GetRequiredService<IFullState>();
     }
 }
 
