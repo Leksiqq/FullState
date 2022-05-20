@@ -10,8 +10,6 @@ builder.Services.AddFullState(op =>
     op.Cookie.Name = "qq";
 });
 
-builder.Services.AddHttpContextAccessor();
-
 builder.Services.AddScoped<ClientHolder>();
 
 builder.Services.AddScoped<ScopedProbe>();

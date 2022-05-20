@@ -22,7 +22,7 @@ public class Tests
         Process[] processes = Process.GetProcessesByName("FullStateTestServer");
         foreach (Process process in processes)
         {
-            process.Kill();
+            //process.Kill();
         }
     }
 

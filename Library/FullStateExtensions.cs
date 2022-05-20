@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -56,6 +57,10 @@ public static class FullStateExtensions
             {
                 op.ExpirationScanFrequency = _fullStateOptions.ExpirationScanFrequency;
             });
+        }
+        if (!services.Any(sd => sd.ServiceType == typeof(IHttpContextAccessor)))
+        {
+            services.AddHttpContextAccessor();
         }
         _entryOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(_fullStateOptions.IdleTimeout);
         PostEvictionCallbackRegistration postEvictionCallbackRegistration = new PostEvictionCallbackRegistration();
