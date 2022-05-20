@@ -1,42 +1,46 @@
 ﻿using Net.Leksi.FullState;
-using System.Diagnostics;
 
 namespace FullStateTestServer;
 
 public class BaseProbe : IDisposable
 {
+    private static int _genId = 0;
     private readonly IServiceProvider _services;
-    private readonly List<AssertHolder> _asserts;
-    private readonly ClientHolder _client;
-    private readonly Type[] _types = new[] { typeof(TransientProbe), typeof(ScopedProbe), typeof(SingletonProbe) };
+    private readonly Type[] _types = new[] { typeof(ITransient), typeof(IScoped), typeof(ISingleton) };
 
+    internal static int Depth { get; set; } = 4;
+    public int Id { get; private set; }
+    public bool IsDisposed { get; private set; } = false;
     public BaseProbe(IServiceProvider services)
     {
-        Trace.WriteLine($"{GetType()}, {services.GetHashCode()}");
+        Id = Interlocked.Increment(ref _genId);
         _services = services;
-        IFullState session = IFullState.Extract(_services);
-        _client = session.RequestServices.GetRequiredService<ClientHolder>();
-        _asserts = session.RequestServices.GetRequiredService<List<AssertHolder>>();
     }
 
-    private void AddAssert(string selector, int value)
+    private void AddAssert(string selector, int value, string? error = null)
     {
-        _asserts.Add(new AssertHolder
+        IFullState session = _services.GetFullState();
+        ClientHolder client = session.RequestServices.GetRequiredService<ClientHolder>();
+        session.RequestServices.GetRequiredService<List<AssertHolder>>().Add(new AssertHolder
         {
-            Client = _client.Client,
-            Request = _client.Request,
-            Session = _client.Session,
+            Client = client.Client,
+            Request = client.Request,
+            Session = client.Session,
             Selector = selector,
-            Value = value
+            ObjectId = value,
+            Error = error
         });
     }
 
     public void DoSomething(string trace)
     {
-        AddAssert(trace, GetHashCode());
-        if (trace.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Length < 4)
+        if (!string.IsNullOrEmpty(trace))
         {
-            IFullState session = IFullState.Extract(_services);
+            AddAssert(trace, Id, IsDisposed ? "disposed" : null);
+        }
+        if (trace.Where(c => c == '/').Count() < Depth)
+        {
+            IFullState session = _services.GetFullState();
 
             IServiceProvider[] services = new[] { _services, session.RequestServices, session.SessionServices };
 
@@ -50,9 +54,9 @@ public class BaseProbe : IDisposable
                         BaseProbe probe = (BaseProbe)services[i].GetRequiredService(type);
                         probe.DoSomething(nextTrace);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        AddAssert(nextTrace, 0);
+                        AddAssert(nextTrace, -1, ex.ToString());
                     }
                 }
             }
@@ -62,6 +66,6 @@ public class BaseProbe : IDisposable
 
     public void Dispose()
     {
-        AddAssert($"disposed", GetHashCode());
+        IsDisposed = true;
     }
 }

@@ -2,7 +2,7 @@
 using Net.Leksi.FullState;
 using System.Text.Json;
 
-var builder = WebApplication.CreateBuilder(new string[] { });
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddFullState(op =>
 {
@@ -12,9 +12,9 @@ builder.Services.AddFullState(op =>
 
 builder.Services.AddScoped<ClientHolder>();
 
-builder.Services.AddScoped<ScopedProbe>();
-builder.Services.AddSingleton<SingletonProbe>();
-builder.Services.AddTransient<TransientProbe>();
+builder.Services.AddScoped<IScoped, ScopedProbe>();
+builder.Services.AddSingleton<ISingleton, SingletonProbe>();
+builder.Services.AddTransient<ITransient, TransientProbe>();
 
 builder.Services.AddScoped<List<AssertHolder>>();
 
@@ -35,10 +35,26 @@ app.MapGet("/{client}/{request}", async (HttpContext context, int client, int re
     new BaseProbe(context.RequestServices).DoSomething(string.Empty);
 
     JsonSerializerOptions options = new();
-    
+
+    //Console.WriteLine(string.Join("\n", context.RequestServices.GetRequiredService<List<AssertHolder>>()));
 
     await context.Response.WriteAsJsonAsync(context.RequestServices.GetRequiredService<List<AssertHolder>>(), options);
 });
+
+if(args is { })
+{
+    string url = args.Where(s => s.StartsWith("applicationUrl=")).FirstOrDefault();
+    if(url is { })
+    {
+        app.Urls.Clear();
+        app.Urls.Add(url.Substring("applicationUrl=".Length));
+    }
+    string depth = args.Where(s => s.StartsWith("depth=")).FirstOrDefault();
+    if(depth is { })
+    {
+        BaseProbe.Depth = int.Parse(depth.Substring("depth=".Length));
+    }
+}
 
 app.Run();
 

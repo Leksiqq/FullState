@@ -28,7 +28,7 @@ namespace Net.Leksi.FullState;
 ///
 ///     public string Get()
 ///     {
-///         IFullState session = _serviceProvider.GetRequiredService{IFullState}();
+///         IFullState session = _serviceProvider.GetFullState();
 ///         Another another = session.RequestServices.GetRequiredService{Another}();
 ///         ...
 ///     }
@@ -57,10 +57,4 @@ public interface IFullState
     /// </para>
     /// </summary>
     IServiceProvider SessionServices { get; }
-
-    public static IFullState Extract(IServiceProvider serviceProvider)
-    {
-        IHttpContextAccessor ca = serviceProvider.GetRequiredService<IHttpContextAccessor>();
-        return ca.HttpContext.RequestServices.GetRequiredService<IFullState>();
-    }
 }

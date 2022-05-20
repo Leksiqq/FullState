@@ -25,9 +25,11 @@ public static class FullStateExtensions
 
     /// <summary>
     /// <para xml:lang="ru">
+    ///  (Расширение)
     /// Добавляет инфраструктуру, необходимую для full state сервера
     /// </para>
     /// <para xml:lang="en">
+    /// (Extension)
     /// Adds the infrastructure needed for a full state server
     /// </para>
     /// </summary>
@@ -68,7 +70,7 @@ public static class FullStateExtensions
         postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
         {
             if (r is EvictionReason.Expired && s is Type stype && stype == typeof(FullStateExtensions) 
-                && v is SessionHolder session && session.ServiceProvider is IDisposable disposable)
+                && v is IDisposable disposable)
             {
                 disposable.Dispose();
             }
@@ -76,16 +78,17 @@ public static class FullStateExtensions
         _entryOptions.PostEvictionCallbacks.Add(postEvictionCallbackRegistration);
 
         services.AddScoped<IFullState, FullState>();
-        services.AddSingleton<SingletonProbe>();
 
 
         return services;
     }
     /// <summary>
     /// <para xml:lang="ru">
+    /// (Расширение)
     /// Добавляет ПО промежуточного слоя для автоматического включения поддержки full state сервера
     /// </para>
-    /// /// <para xml:lang="en">
+    /// <para xml:lang="en">
+    /// (Extension)
     /// Adds middleware to automatically enable server full state support
     /// </para>
     /// </summary>
@@ -115,53 +118,24 @@ public static class FullStateExtensions
                 }
             }
             object? sessionObj = null;
-            SessionHolder? session = null!;
+            IServiceProvider? session = null!;
             string key = context.Request.Cookies[_fullStateOptions.Cookie.Name];
             bool isNewSession = false;
-            FullState sessionFullState = null!;
-            FullState contextFullState = (context.RequestServices.GetRequiredService<IFullState>() as FullState)!;
-            FullState singletonFullState = null!;
-            if (_rootServiceProviderCheckState != 2)
-            {
-
-            }
-            try
-            {
-                singletonFullState = context.RequestServices.GetRequiredService<SingletonProbe>().ServiceProvider.GetRequiredService<IFullState>() as FullState;
-                _rootServiceProviderCheckState = 1;
-            }
-            catch (InvalidOperationException)
-            {
-                _rootServiceProviderCheckState = 2;
-            }
+            FullState fullState = (context.RequestServices.GetRequiredService<IFullState>() as FullState)!;
             if (
                 key is null
                 || !sessions.TryGetValue(key, out sessionObj)
-                || (session = sessionObj as SessionHolder) is null
+                || (session = sessionObj as IServiceProvider) is null
             )
             {
                 key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref _cookieSequenceGen)}";
-                session = new SessionHolder(context.RequestServices.CreateScope().ServiceProvider);
-                sessionFullState = (session!.ServiceProvider!.GetRequiredService<IFullState>() as FullState)!;
-                sessionFullState.SessionServices = session!.ServiceProvider!;
-                if (singletonFullState is { })
-                {
-                    singletonFullState.SessionServices = session!.ServiceProvider!;
-                }
+                session = context.RequestServices.CreateScope().ServiceProvider;
                 context.Response.Cookies.Append(_fullStateOptions.Cookie.Name, key, _fullStateOptions.Cookie.Build(context));
                 isNewSession = true;
             }
-            else
-            {
-                sessionFullState = (session!.ServiceProvider!.GetRequiredService<IFullState>() as FullState)!;
-            }
-            sessionFullState.RequestServices = context.RequestServices;
-            contextFullState.RequestServices = context.RequestServices;
-            contextFullState.SessionServices = session!.ServiceProvider!;
-            if (singletonFullState is { })
-            {
-                singletonFullState.RequestServices = context.RequestServices;
-            }
+
+            fullState.RequestServices = context.RequestServices;
+            fullState.SessionServices = session!;
             try
             {
                 await (next?.Invoke() ?? Task.CompletedTask);
@@ -177,6 +151,22 @@ public static class FullStateExtensions
         });
         return app;
     }
-
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// (Расширение)
+    /// Возвращает текущую сессию
+    /// </para>
+    /// <para xml:lang="en">
+    /// (Extension)
+    /// Returns the current session
+    /// </para>
+    /// </summary>
+    /// <param name="serviceProvider"></param>
+    /// <returns></returns>
+    public static IFullState GetFullState(this IServiceProvider serviceProvider)
+    {
+        IHttpContextAccessor ca = serviceProvider.GetRequiredService<IHttpContextAccessor>();
+        return ca.HttpContext.RequestServices.GetRequiredService<IFullState>();
+    }
 
 }

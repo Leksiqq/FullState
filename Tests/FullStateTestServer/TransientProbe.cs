@@ -1,6 +1,6 @@
 ﻿namespace FullStateTestServer;
 
-public class TransientProbe : BaseProbe
+public class TransientProbe : BaseProbe, ITransient
 {
     public TransientProbe(IServiceProvider services) : base(services)
     {
