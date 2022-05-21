@@ -10,8 +10,6 @@ builder.Services.AddFullState(op =>
     op.Cookie.Name = "qq";
 });
 
-builder.Services.AddScoped<ClientHolder>();
-
 builder.Services.AddScoped<IScoped, ScopedProbe>();
 builder.Services.AddSingleton<ISingleton, SingletonProbe>();
 builder.Services.AddTransient<ITransient, TransientProbe>();
@@ -23,20 +21,13 @@ WebApplication app = builder.Build();
 
 app.UseFullState();
 
-app.MapGet("/{client}/{request}", async (HttpContext context, int client, int request) =>
+app.MapGet("/", async (HttpContext context) =>
 {
-    Console.WriteLine(context.Request.Path);
-    ClientHolder clientHolder = context.RequestServices.GetRequiredService<ClientHolder>();
-    clientHolder.Client = client;
-    clientHolder.Request = request;
-    clientHolder.Session = context.Request.Cookies["qq"];
-
-
     new BaseProbe(context.RequestServices).DoSomething(string.Empty);
 
-    JsonSerializerOptions options = new();
+    context.RequestServices.GetRequiredService<List<AssertHolder>>().ForEach(h => h.Session = context.Request.Cookies["qq"]);
 
-    //Console.WriteLine(string.Join("\n", context.RequestServices.GetRequiredService<List<AssertHolder>>()));
+    JsonSerializerOptions options = new();
 
     await context.Response.WriteAsJsonAsync(context.RequestServices.GetRequiredService<List<AssertHolder>>(), options);
 });

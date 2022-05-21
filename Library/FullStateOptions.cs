@@ -52,7 +52,7 @@ public class FullStateOptions
     /// IsEssential by default <c>false</c>
     /// </para>
     /// </summary>
-    public CookieBuilder Cookie { get; set; } = new()
+    public CookieBuilder Cookie { get; init; } = new()
     {
         Name = SessionDefaults.CookieName,
         Path = SessionDefaults.CookiePath,

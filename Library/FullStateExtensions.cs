@@ -21,15 +21,12 @@ public static class FullStateExtensions
     private static MemoryCacheEntryOptions _entryOptions = null!;
     private static System.Timers.Timer _checkSessions = null!;
     private static int _cookieSequenceGen = 0;
-    private static int _rootServiceProviderCheckState = 0;
 
     /// <summary>
     /// <para xml:lang="ru">
-    ///  (Расширение)
     /// Добавляет инфраструктуру, необходимую для full state сервера
     /// </para>
     /// <para xml:lang="en">
-    /// (Extension)
     /// Adds the infrastructure needed for a full state server
     /// </para>
     /// </summary>
@@ -84,11 +81,9 @@ public static class FullStateExtensions
     }
     /// <summary>
     /// <para xml:lang="ru">
-    /// (Расширение)
     /// Добавляет ПО промежуточного слоя для автоматического включения поддержки full state сервера
     /// </para>
     /// <para xml:lang="en">
-    /// (Extension)
     /// Adds middleware to automatically enable server full state support
     /// </para>
     /// </summary>
@@ -153,11 +148,9 @@ public static class FullStateExtensions
     }
     /// <summary>
     /// <para xml:lang="ru">
-    /// (Расширение)
     /// Возвращает текущую сессию
     /// </para>
     /// <para xml:lang="en">
-    /// (Extension)
     /// Returns the current session
     /// </para>
     /// </summary>

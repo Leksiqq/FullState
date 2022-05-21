@@ -90,31 +90,33 @@ public class Tests
         ConcurrentQueue<AssertHolder> asserts = new();
 
         Task[] clients = new Task[numberOfClients];
-        for (int i = 0; i < clients.Length; i++)
+        for (int clnt = 0; clnt < clients.Length; clnt++)
         {
-            int clientNum = i;
-            clients[i] = Task.Run(async () =>
+            int clientNum = clnt;
+            clients[clnt] = Task.Run((Func<Task?>)(async () =>
             {
                 HttpClient client = new HttpClient();
 
                 client.BaseAddress = new Uri(Url);
 
-                for (int j = 0; j < numberOfREquests; j++)
+                for (int req = 0; req < numberOfREquests; req++)
                 {
-                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, $"/{clientNum}/{j}");
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "/");
 
                     HttpResponseMessage response = await client.SendAsync(request);
 
-                    Assert.That(response.StatusCode == System.Net.HttpStatusCode.OK);
+                    Assert.That(response.StatusCode is System.Net.HttpStatusCode.OK);
 
                     string data = await response.Content.ReadAsStringAsync();
                     foreach (AssertHolder assert in JsonSerializer.Deserialize<List<AssertHolder>>(data)!)
                     {
+                        assert.Client = clientNum;
+                        assert.Request = req;
                         asserts.Enqueue(assert);
                     }
                 }
 
-            });
+            }));
         }
 
         await Task.WhenAll(clients);

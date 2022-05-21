@@ -20,12 +20,8 @@ public class BaseProbe : IDisposable
     private void AddAssert(string selector, int value, string? error = null)
     {
         IFullState session = _services.GetFullState();
-        ClientHolder client = session.RequestServices.GetRequiredService<ClientHolder>();
         session.RequestServices.GetRequiredService<List<AssertHolder>>().Add(new AssertHolder
         {
-            Client = client.Client,
-            Request = client.Request,
-            Session = client.Session,
             Selector = selector,
             ObjectId = value,
             Error = error
