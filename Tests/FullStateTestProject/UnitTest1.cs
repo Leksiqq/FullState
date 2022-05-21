@@ -48,7 +48,7 @@ public class Tests
         TimeSpan connectionTimeout = TimeSpan.FromSeconds(10);
         int connectionTryInterval = 1000;
         int numberOfClients = 3;
-        int numberOfREquests = 3;
+        int numberOfRequests = 3;
         int depth = 3;
 
         Process[] processes = Process.GetProcessesByName(FullStateTestServer);
@@ -99,7 +99,7 @@ public class Tests
 
                 client.BaseAddress = new Uri(Url);
 
-                for (int req = 0; req < numberOfREquests; req++)
+                for (int req = 0; req < numberOfRequests; req++)
                 {
                     HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "/");
 
@@ -141,7 +141,7 @@ public class Tests
             count++;
             //Trace.WriteLine(assert);
 
-            int request = assert.Client * numberOfREquests + assert.Request;
+            int request = assert.Client * numberOfRequests + assert.Request;
 
             Assert.That(assert.Error, Is.Null);
 
@@ -268,7 +268,7 @@ public class Tests
         }
 
         Assert.That(count, 
-            Is.EqualTo((int)Math.Round(numberOfClients * numberOfREquests * (Math.Pow(9, depth + 1) - 9) / 8)),
+            Is.EqualTo((int)Math.Round(numberOfClients * numberOfRequests * (Math.Pow(9, depth + 1) - 9) / 8)),
             count.ToString());
 
 
