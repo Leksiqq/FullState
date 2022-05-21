@@ -87,7 +87,7 @@ public class Tests
             }
         }
 
-        ConcurrentQueue<AssertHolder> asserts = new();
+        ConcurrentQueue<TraceItem> asserts = new();
 
         Task[] clients = new Task[numberOfClients];
         for (int clnt = 0; clnt < clients.Length; clnt++)
@@ -108,7 +108,7 @@ public class Tests
                     Assert.That(response.StatusCode is System.Net.HttpStatusCode.OK);
 
                     string data = await response.Content.ReadAsStringAsync();
-                    foreach (AssertHolder assert in JsonSerializer.Deserialize<List<AssertHolder>>(data)!)
+                    foreach (TraceItem assert in JsonSerializer.Deserialize<List<TraceItem>>(data)!)
                     {
                         assert.Client = clientNum;
                         assert.Request = req;
@@ -135,7 +135,7 @@ public class Tests
 
         int count = 0;
 
-        while (asserts.TryDequeue(out AssertHolder? assert))
+        while (asserts.TryDequeue(out TraceItem? assert))
         {
 
             count++;
@@ -163,7 +163,7 @@ public class Tests
             }
 
 
-            if (testSingletonProbe.IsMatch(assert.Selector))
+            if (testSingletonProbe.IsMatch(assert.Trace))
             {
                 // Все синглтоны равны
                 if (singletons.Count == 0)
@@ -175,14 +175,14 @@ public class Tests
                     Assert.That(singletons.Add(assert.ObjectId), Is.Not.True);
                 }
             }
-            else if (testTransientProbe.IsMatch(assert.Selector))
+            else if (testTransientProbe.IsMatch(assert.Trace))
             {
                 // Все трансиенты разные
                 Assert.That(transients.Add(assert.ObjectId), Is.True);
             }
-            else if (testScopedProbe.IsMatch(assert.Selector))
+            else if (testScopedProbe.IsMatch(assert.Trace))
             {
-                int[] scopePath = assert.Selector.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
+                int[] scopePath = assert.Trace.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(s => s.StartsWith("ISingleton") ? -1 : int.Parse(s.Substring(s.Length - 1))).ToArray();
 
 
@@ -213,8 +213,8 @@ public class Tests
                                 "\n", asserts.Where(
                                     a =>
                                     a.Client == assert.Client && a.Request == assert.Request
-                                    && testScopedProbe.IsMatch(a.Selector)
-                                    && (a.Selector.EndsWith("0") || a.Selector.EndsWith("1"))
+                                    && testScopedProbe.IsMatch(a.Trace)
+                                    && (a.Trace.EndsWith("0") || a.Trace.EndsWith("1"))
                                 )
                             )
                         );
@@ -235,8 +235,8 @@ public class Tests
                                 "\n", asserts.Where(
                                     a =>
                                     a.Client == assert.Client
-                                    && testScopedProbe.IsMatch(a.Selector)
-                                    && (a.Selector.EndsWith("0") || a.Selector.EndsWith("2"))
+                                    && testScopedProbe.IsMatch(a.Trace)
+                                    && (a.Trace.EndsWith("0") || a.Trace.EndsWith("2"))
                                 )
                             )
                         );

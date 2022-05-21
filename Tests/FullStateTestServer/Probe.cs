@@ -2,7 +2,7 @@
 
 namespace FullStateTestServer;
 
-public class BaseProbe : IDisposable
+public class Probe : IDisposable, ITransient, IScoped, ISingleton
 {
     private static int _genId = 0;
     private readonly IServiceProvider _services;
@@ -11,18 +11,18 @@ public class BaseProbe : IDisposable
     internal static int Depth { get; set; } = 4;
     public int Id { get; private set; }
     public bool IsDisposed { get; private set; } = false;
-    public BaseProbe(IServiceProvider services)
+    public Probe(IServiceProvider services)
     {
         Id = Interlocked.Increment(ref _genId);
         _services = services;
     }
 
-    private void AddAssert(string selector, int value, string? error = null)
+    private void AddTrace(string trace, int value, string? error = null)
     {
         IFullState session = _services.GetFullState();
-        session.RequestServices.GetRequiredService<List<AssertHolder>>().Add(new AssertHolder
+        session.RequestServices.GetRequiredService<List<TraceItem>>().Add(new TraceItem
         {
-            Selector = selector,
+            Trace = trace,
             ObjectId = value,
             Error = error
         });
@@ -32,7 +32,7 @@ public class BaseProbe : IDisposable
     {
         if (!string.IsNullOrEmpty(trace))
         {
-            AddAssert(trace, Id, IsDisposed ? "disposed" : null);
+            AddTrace(trace, Id, IsDisposed ? "disposed" : null);
         }
         if (trace.Where(c => c == '/').Count() < Depth)
         {
@@ -47,12 +47,12 @@ public class BaseProbe : IDisposable
                     string nextTrace = $"{trace}/{type.Name}{i}";
                     try
                     {
-                        BaseProbe probe = (BaseProbe)services[i].GetRequiredService(type);
+                        Probe probe = (Probe)services[i].GetRequiredService(type);
                         probe.DoSomething(nextTrace);
                     }
                     catch (Exception ex)
                     {
-                        AddAssert(nextTrace, -1, ex.ToString());
+                        AddTrace(nextTrace, -1, ex.ToString());
                     }
                 }
             }

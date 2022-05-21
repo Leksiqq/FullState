@@ -10,11 +10,11 @@ builder.Services.AddFullState(op =>
     op.Cookie.Name = "qq";
 });
 
-builder.Services.AddScoped<IScoped, ScopedProbe>();
-builder.Services.AddSingleton<ISingleton, SingletonProbe>();
-builder.Services.AddTransient<ITransient, TransientProbe>();
+builder.Services.AddScoped<IScoped, Probe>();
+builder.Services.AddSingleton<ISingleton, Probe>();
+builder.Services.AddTransient<ITransient, Probe>();
 
-builder.Services.AddScoped<List<AssertHolder>>();
+builder.Services.AddScoped<List<TraceItem>>();
 
 
 WebApplication app = builder.Build();
@@ -23,13 +23,13 @@ app.UseFullState();
 
 app.MapGet("/", async (HttpContext context) =>
 {
-    new BaseProbe(context.RequestServices).DoSomething(string.Empty);
+    new Probe(context.RequestServices).DoSomething(string.Empty);
 
-    context.RequestServices.GetRequiredService<List<AssertHolder>>().ForEach(h => h.Session = context.Request.Cookies["qq"]);
+    context.RequestServices.GetRequiredService<List<TraceItem>>().ForEach(h => h.Session = context.Request.Cookies["qq"]);
 
     JsonSerializerOptions options = new();
 
-    await context.Response.WriteAsJsonAsync(context.RequestServices.GetRequiredService<List<AssertHolder>>(), options);
+    await context.Response.WriteAsJsonAsync(context.RequestServices.GetRequiredService<List<TraceItem>>(), options);
 });
 
 if(args is { })
@@ -43,7 +43,7 @@ if(args is { })
     string depth = args.Where(s => s.StartsWith("depth=")).FirstOrDefault();
     if(depth is { })
     {
-        BaseProbe.Depth = int.Parse(depth.Substring("depth=".Length));
+        Probe.Depth = int.Parse(depth.Substring("depth=".Length));
     }
 }
 
