@@ -17,8 +17,9 @@ Also provides the ability to access request context services in session context 
 
 	builder.Services.AddFullState();
 
-	builder.Services.AddSessional<...>();
-	builder.Services.AddSessional<...>();
+	// For interfaces being used as sessional or request scoped
+	builder.Services.AddScoped<...>();
+	builder.Services.AddScoped<...>();
 
 	...
 
@@ -26,7 +27,10 @@ Also provides the ability to access request context services in session context 
 
 	app.UseFullState();
 
-After registering some services as sessional they have session lifetime and can be obtained in standard way: IServiceProvider.GetService(...)
+To obtain a sessional object is is necessary to obtain session by: 
+	IFullState session = service.GetFullState();
+on any IServiceProvider you have, then
+	ISomeIterface obj = session.SessionServices.GetService<ISomeIterface>();
 
 
 ## API
