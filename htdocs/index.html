@@ -140,7 +140,7 @@
             <h1>Net.Leksi.FullState</h1>
             <p>
                 Библиотека предоставляет возможность стандартного использования механизма внедрения зависимости (Dependency Injection) в ASP.NET Core приложениях с сохранением 
-                состояния между запросами в течение сессии (full state). Позволяет регистрировать в контейнере DI службы контекста сессии и получать их из контейнера обычным  способом.
+                состояния между запросами в течение сессии (full state). Поддерживает сохранение специального контейнера DI в течение сессии.
                 Также предоставляет возможность получать доступ к службам контеста запроса в методах служб контекста сессии.
             </p>
             <a name="FullStateExtensions"/>
@@ -159,40 +159,16 @@
                     <td>Добавляет инфраструктуру, необходимую для full state сервера</td>
                 </tr>
                 <tr>
-                    <td><a href="">AddFullState(IServiceCollection, Action<FullStateOptions>)</a></td>
+                    <td><a href="#AddFullState">AddFullState(IServiceCollection, Action<FullStateOptions>)</a></td>
                     <td>Добавляет инфраструктуру, необходимую для full state сервера</td>
                 </tr>
                 <tr>
-                    <td><a href="#AddSessional">AddSessional(IServiceCollection, Type)</a></td>
-                    <td>Добавляет в данную коллекцию службу указанного типа с ограниченной сессией областью</td>
-                </tr>
-                <tr>
-                    <td><a href="#AddSessional">AddSessional(IServiceCollection, Type, Func&lt;IServiceProvider, object&gt;)</a></td>
-                    <td>Добавляет в данную коллекцию службу указанного типа с ограниченной сессией областью и реализующей фабрикой</td>
-                </tr>
-                <tr>
-                    <td><a href="#AddSessional">AddSessional(IServiceCollection, Type, Type)</a></td>
-                    <td>Добавляет в данную коллекцию службу указанного типа с ограниченной сессией областью и указанным типом реализации</td>
-                </tr>
-                <tr>
-                    <td><a href="#AddSessional">AddSessional&lt;T1, T2&gt;(IServiceCollection)</a></td>
-                    <td>Добавляет в данную коллекцию службу указанного типа с ограниченной сессией областью и указанным типом реализации</td>
-                </tr>
-                <tr>
-                    <td><a href="#AddSessional">AddSessional&lt;T1, T2&gt;(IServiceCollection, Func&lt;IServiceProvider, T2&gt;)</a></td>
-                    <td>Добавляет в данную коллекцию службу указанного типа с ограниченной сессией областью и указанным типом реализации и реализующей фабрикой</td>
-                </tr>
-                <tr>
-                    <td><a href="#AddSessional">AddSessional&lt;T1&gt;(IServiceCollection)</a></td>
-                    <td>Добавляет в данную коллекцию службу указанного типа с ограниченной сессией областью</td>
-                </tr>
-                <tr>
-                    <td><a href="#AddSessional">AddSessional&lt;T1&gt;(IServiceCollection, Func&lt;IServiceProvider, T1&gt;)</a></td>
-                    <td>Добавляет в данную коллекцию службу указанного типа с ограниченной сессией областью и реализующей фабрикой</td>
-                </tr>
-                <tr>
-                    <td><a href="">UseFullState(IApplicationBuilder)</a></td>
+                    <td><a href="#UseFullState">UseFullState(IApplicationBuilder)</a></td>
                     <td>Добавляет в данное приложение ПО промежуточного слоя для автоматического включения поддержки full state сервера</td>
+                </tr>
+                <tr>
+                    <td><a href="#GetFullState">GetFullState(IServiceProvider)</a></td>
+                    <td>Получает из контейнера DI аксессор к контейнерам контекста сессии и контекста запроса</td>
                 </tr>
             </table>
             <a name="AddFullState"></a>
@@ -222,69 +198,6 @@
                 Целевая коллекция для цепочки вызовов.
             </p>
 
-            <a name="AddSessional"></a>
-            <h3>Методы AddSessional(...)</h3>
-
-            <p>
-                Добавляют в данную коллекцию службу указанного типа с ограниченной сессией областью и различными возможностями реализации.
-            </p>
-            <script src="https://gist.github.com/Leksiqq/25451fbc4ec99218e311b791e5ea3aba.js"></script>
-            <h4>Параметры типа</h4>
-            <p>
-                <span class="parameter">TService</span>
-            </p>
-            <p>
-                Тип службы.
-            </p>
-            <p>
-                <span class="parameter">TImplementation</span>
-            </p>
-            <p>
-                Тип реализации службы.
-            </p>
-
-            <h4>Параметры</h4>
-            <p>
-                <span class="parameter">services</span> <a href="https://docs.microsoft.com/ru-ru/dotnet/api/microsoft.extensions.dependencyinjection.iservicecollection" target="_blank">IServiceCollection</a>
-            </p>
-            <p>
-                Целевая коллекция.
-            </p>
-            <p>
-                <span class="parameter">serviceType</span> <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.type" target="_blank">Type</a>
-            </p>
-            <p>
-                Тип службы.
-            </p>
-            <p>
-                <span class="parameter">implementationType</span> <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.type" target="_blank">Type</a>
-            </p>
-            <p>
-                Тип реализации службы.
-            </p>
-            <p>
-                <span class="parameter">implementationFactory</span> <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.func-2" target="_blank">Func</a>&lt;<a 
-                href="https://docs.microsoft.com/ru-ru/dotnet/api/system.iserviceprovider" target="_blank">IServiceProvider</a>, 
-                <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.object" target="_blank">object</a>&gt;, 
-                <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.func-2" target="_blank">Func</a>&lt;<a 
-                href="https://docs.microsoft.com/ru-ru/dotnet/api/system.iserviceprovider" target="_blank">IServiceProvider</a>, 
-                TImplementation&gt;, 
-                <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.func-2" target="_blank">Func</a>&lt;<a 
-                href="https://docs.microsoft.com/ru-ru/dotnet/api/system.iserviceprovider" target="_blank">IServiceProvider</a>, 
-                TService&gt;
-            </p>
-            <p>
-                Реализующая фабрика службы.
-            </p>
-
-            <h4>Возвращаемое значение</h4>
-            <p>
-                <a href="https://docs.microsoft.com/ru-ru/dotnet/api/microsoft.extensions.dependencyinjection.iservicecollection" target="_blank">IServiceCollection</a>
-            </p>
-            <p>
-                Целевая коллекция для цепочки вызовов.
-            </p>
-
             <a name="UseFullState"/>
             <h3>Метод UseFullState(...)</h3>
             <p>
@@ -305,6 +218,28 @@
             </p>
             <p>
                 Целевое приложение для цепочки вызовов.
+            </p>
+
+            <a name="GetFullState"/>
+            <h3>Метод GetFullState(...)</h3>
+            <p>
+                Получает из контейнера DI аксессор к контейнерам контекста сессии и контекста запроса.
+            </p>
+            <script src="https://gist.github.com/Leksiqq/96c0f8f56fd2128d8ffbe8673f023536.js"></script>
+            <h4>Параметры</h4>
+            <p>
+                <span class="parameter">serviceProvider</span> <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.iserviceprovider" target="_blank">IServiceProvider</a>
+            </p>
+            <p>
+                Целевой контейнер DI.
+            </p>
+
+            <h4>Возвращаемое значение</h4>
+            <p>
+                <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.iserviceprovider" target="_blank">IServiceProvider</a>
+            </p>
+            <p>
+                Целевой контейнер DI для цепочки вызовов.
             </p>
 
             <a name="FullStateOptions"/>
@@ -372,6 +307,14 @@
                         Провайдер служб Http-контекста.
                     </td>
                 </tr>
+                <tr>
+                    <td>
+                        <a href="https://docs.microsoft.com/en-us/dotnet/api/system.iserviceprovider" target="_blank">IServiceProvider</a> SessionServices
+                    </td>
+                    <td>
+                        Провайдер служб контекста сессии.
+                    </td>
+                </tr>
             </table>
             
             <h2>Использование</h2>
@@ -382,9 +325,8 @@
             <script src="https://gist.github.com/Leksiqq/51576e62fb5847e1ef7506780443277b.js"></script>
 
             <p>
-                В примере подключается поддержка служб контекста сессии с опциями по умолчанию. Служба <code>InfoProvider</code> регистрируется как служба контекста сессии и при каждом извлечении из контейнера DI 
-                в пределах времени жизни сессии будет одним объектом с сохранённым состоянием. Служба <code>Another</code> регистрируется как служба контекста Http-запроса и сохраняет своё состояние в пределах 
-                времени обработки запроса.
+                В примере подключается поддержка служб контекста сессии с опциями по умолчанию. 
+                Службы <code>InfoProvider</code> и <code>Another</code> регистрируется как Scoped.
             </p>
 
             <a name="App.config"/>

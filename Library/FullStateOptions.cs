@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Session;
 
 namespace Net.Leksi.FullState;
 /// <summary>
@@ -36,8 +35,8 @@ public class FullStateOptions
     /// <para xml:lang="ru">
     /// Определяет параметры, используемые для создания файлов cookie. 
     /// 
-    /// Для Name задается значение по умолчанию <see cref="SessionDefaults.CookieName"/>. 
-    /// Для Path задается значение по умолчанию <see cref="SessionDefaults.CookiePath"/>. 
+    /// Для Name задается значение по умолчанию <see cref="FullStateDefaults.CookieName"/>. 
+    /// Для Path задается значение по умолчанию <see cref="FullStateDefaults.CookiePath"/>. 
     /// Для SameSite задается значение по умолчанию <see cref="SameSiteMode.Lax"/>. 
     /// HttpOnlyпо умолчанию имеет значение <c>true</c>.
     /// IsEssential по умолчанию <c>false</c>
@@ -45,8 +44,8 @@ public class FullStateOptions
     /// <para xml:lang="en">
     /// Defines the options used to create cookies.
     ///
-    /// Name is set to the default value <see cref="SessionDefaults.CookieName"/>.
-    /// Path is set to the default <see cref="SessionDefaults.CookiePath"/>.
+    /// Name is set to the default value <see cref="FullStateDefaults.CookieName"/>.
+    /// Path is set to the default <see cref="FullStateDefaults.CookiePath"/>.
     /// SameSite is set to the default <see cref="SameSiteMode.Lax"/>.
     /// HttpOnly is <c>true</c> by default.
     /// IsEssential by default <c>false</c>
@@ -54,8 +53,8 @@ public class FullStateOptions
     /// </summary>
     public CookieBuilder Cookie { get; init; } = new()
     {
-        Name = SessionDefaults.CookieName,
-        Path = SessionDefaults.CookiePath,
+        Name = FullStateDefaults.CookieName,
+        Path = FullStateDefaults.CookiePath,
         SameSite = SameSiteMode.Lax,
         IsEssential = false,
         HttpOnly = true,
