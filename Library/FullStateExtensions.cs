@@ -67,9 +67,9 @@ public static class FullStateExtensions
         postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
         {
             if (r is EvictionReason.Expired && s is Type stype && stype == typeof(FullStateExtensions) 
-                && v is IDisposable disposable)
+                && v is Session session)
             {
-                disposable.Dispose();
+                session.Dispose();
             }
         };
         _entryOptions.PostEvictionCallbacks.Add(postEvictionCallbackRegistration);
@@ -113,26 +113,28 @@ public static class FullStateExtensions
                 }
             }
             object? sessionObj = null;
-            IServiceProvider? session = null!;
+            Session? session = null;
             string key = context.Request.Cookies[_fullStateOptions.Cookie.Name];
             bool isNewSession = false;
             FullState fullState = (context.RequestServices.GetRequiredService<IFullState>() as FullState)!;
             if (
                 key is null
                 || !sessions.TryGetValue(key, out sessionObj)
-                || (session = sessionObj as IServiceProvider) is null
+                || (session = sessionObj! as Session) is null
             )
             {
                 key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref _cookieSequenceGen)}";
-                session = context.RequestServices.CreateScope().ServiceProvider;
+                session = new();
+                session!.SessionServices = context.RequestServices.CreateScope().ServiceProvider;
                 context.Response.Cookies.Append(_fullStateOptions.Cookie.Name, key, _fullStateOptions.Cookie.Build(context));
                 isNewSession = true;
             }
 
             fullState.RequestServices = context.RequestServices;
-            fullState.SessionServices = session!;
+            fullState.SessionServices = session.SessionServices!;
             try
             {
+                await session.OneRequestAllowed.WaitAsync();
                 await (next?.Invoke() ?? Task.CompletedTask);
                 if (isNewSession)
                 {
@@ -142,6 +144,10 @@ public static class FullStateExtensions
             catch (Exception)
             {
                 throw;
+            }
+            finally
+            {
+                session.OneRequestAllowed.Release();
             }
         });
         return app;
