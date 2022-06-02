@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Library\FullStateDebug.csproj" />
-    <ProjectReference Include="..\FullStateTestServer\FullStateTestServerDebug.csproj" />
+    <ProjectReference Include="..\FullStateTestServer\FullStateTestServer.csproj" />
   </ItemGroup>
 
 </Project>

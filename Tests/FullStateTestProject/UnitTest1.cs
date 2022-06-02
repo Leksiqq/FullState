@@ -18,6 +18,7 @@ public class Tests
     private const string Url = "http://localhost:5555";
     private const string FullStateTestServer = nameof(FullStateTestServer);
     private const string FullStateTestProject = nameof(FullStateTestProject);
+    private const string LogoutPath = "/logout";
     private static readonly Regex testTransientProbe = new Regex(@"/ITransient[0-2]$");
     private static readonly Regex testScopedProbe = new Regex(@"/IScoped[0-2]$");
     private static readonly Regex testSingletonProbe = new Regex(@"/ISingleton[0-2]$");
@@ -26,6 +27,7 @@ public class Tests
     [OneTimeSetUp]
     public void OneTimeSetup()
     {
+        Trace.Listeners.Clear();
         Trace.Listeners.Add(new ConsoleTraceListener());
         Trace.AutoFlush = true;
 
@@ -62,7 +64,7 @@ public class Tests
         {
             UseShellExecute = true,
             FileName = FullStateTestServer,
-            Arguments = $"applicationUrl={Url} depth={depth}",
+            Arguments = $"applicationUrl={Url} depth={depth} logout={LogoutPath}",
             WorkingDirectory = wd
         };
         Process serverProcess = Process.Start(processStartInfo);
@@ -114,6 +116,15 @@ public class Tests
                         assert.Request = req;
                         asserts.Enqueue(assert);
                     }
+                }
+                {
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, LogoutPath);
+
+                    HttpResponseMessage response = await client.SendAsync(request);
+
+                    Assert.That(response.StatusCode is System.Net.HttpStatusCode.NoContent);
+                    Assert.That(response.Headers.Contains("set-cookie"));
+                    Assert.That(string.Join("\n", response.Headers.GetValues("set-cookie")), Is.EqualTo("qq=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"));
                 }
 
             }));
@@ -273,5 +284,6 @@ public class Tests
 
 
     }
+
 
 }

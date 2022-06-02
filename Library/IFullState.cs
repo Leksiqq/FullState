@@ -57,4 +57,13 @@ public interface IFullState
     /// </para>
     /// </summary>
     IServiceProvider SessionServices { get; }
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Создаёт <see cref="CancellationTokenSource"/> для запуска задач
+    /// </para>
+    /// <para xml:lang="en">
+    /// Creates <see cref="CancellationTokenSource"/> to start tasks
+    /// </para>
+    /// </summary>
+    CancellationTokenSource CreateCancellationTokenSource();
 }

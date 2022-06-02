@@ -8,6 +8,14 @@ builder.Services.AddFullState(op =>
 {
     op.IdleTimeout = TimeSpan.FromSeconds(20);
     op.Cookie.Name = "qq";
+    if(args is { })
+    {
+        string logout = args.Where(s => s.StartsWith("logout=")).FirstOrDefault();
+        if(logout is { })
+        {
+            op.LogoutPath = logout.Substring("logout=".Length);
+        }
+    }
 });
 
 builder.Services.AddScoped<IScoped, Probe>();
@@ -32,7 +40,7 @@ app.MapGet("/", async (HttpContext context) =>
     await context.Response.WriteAsJsonAsync(context.RequestServices.GetRequiredService<List<TraceItem>>(), options);
 });
 
-if(args is { })
+if (args is { })
 {
     string url = args.Where(s => s.StartsWith("applicationUrl=")).FirstOrDefault();
     if(url is { })

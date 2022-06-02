@@ -1,41 +1,42 @@
-using FullStateTestServer;
-using Net.Leksi.FullState;
-using System.Collections.Concurrent;
+using Microsoft.Extensions.Options;
+
+string cookieName = "qq";
+int cookieSequenceGen = 0;
 
 var builder = WebApplication.CreateBuilder(new string[] { });
 
-builder.Services.AddFullState(op =>
-{
-    op.IdleTimeout = TimeSpan.FromSeconds(5);
-    op.Cookie.Name = "qq";
-});
-
-
-builder.Services.AddSingleton<ConcurrentQueue<AssertHolder>>();
-builder.Services.AddScoped<ClientHolder>();
-
-builder.Services.AddScoped<ScopedProbe>();
-builder.Services.AddSingleton<SingletonProbe>();
-builder.Services.AddTransient<TransientProbe>();
-builder.Services.AddTransient<BaseProbe>();
-
+builder.Services.AddScoped<FullState1>();
 
 WebApplication app = builder.Build();
 
-app.UseFullState();
-
-app.MapGet("/{client}/{request}", async (HttpContext context, int client, int request) =>
+app.Use(async (HttpContext context, Func<Task> next) =>
 {
+    string? key = context.Request.Cookies[cookieName];
+    if(key is null)
+    {
+        key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref cookieSequenceGen)}";
+        context.Response.Cookies.Append(cookieName, key, new CookieBuilder().Build(context));
+    }
+    context.RequestServices.GetRequiredService<FullState1>().Session = context.RequestServices.GetRequiredService<IOptionsMonitor<Session1>>().Get(key);
+    ++context.RequestServices.GetRequiredService<FullState1>().Session.RequestsCounter;
 
-    ClientHolder clientHolder = context.RequestServices.GetRequiredService<ClientHolder>();
-    clientHolder.Client = client;
-    clientHolder.Request = request;
-    clientHolder.Session = context.Request.Cookies["qq"];
+    next?.Invoke();
+});
 
-
-    context.RequestServices.GetRequiredService<BaseProbe>().DoSomething(string.Empty);
-
-    await context.Response.WriteAsync($"#{request} Hello, Client #{client}!");
+app.MapGet("/api", async (HttpContext context) =>
+{
+    Session1 session = context.RequestServices.GetRequiredService<FullState1>().Session;
+    await context.Response.WriteAsync($"Hello, Client {session.GetHashCode()} (#{session.RequestsCounter})!");
 });
 
 app.Run();
+
+public class FullState1
+{
+    internal Session1 Session { get; set; }
+}
+
+internal class Session1
+{
+    public int RequestsCounter { get; set; } = 0;
+}

@@ -8,8 +8,10 @@ builder.Services.AddFullState(op =>
     op.Cookie.Name = "qq";
     op.ExpirationScanFrequency = TimeSpan.FromSeconds(1);
     op.IdleTimeout = TimeSpan.FromSeconds(20);
+    op.LogoutPath = "/logout";
 });
 
+builder.Services.AddScoped<InfoProvider>();
 builder.Services.AddScoped<InfoProvider>();
 
 builder.Services.AddScoped<Another>();
@@ -24,12 +26,14 @@ var app = builder.Build();
 
 app.UseFullState();
 
-app.MapGet("/", async context =>
+app.MapGet("/api/{cancel=false}", async (HttpContext context, bool cancel) =>
 {
     Another another = context.RequestServices.GetRequiredService<Another>();
-    await context.Response.WriteAsync($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] Hello, World! "
-        + $", controller {another}({another.GetHashCode()}), "
-        + context.RequestServices.GetFullState().SessionServices.GetRequiredService<InfoProvider>().Get());
+    await context.Response.WriteAsync($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] Hello, World! \n"
+        + $", controller {another}({another.GetHashCode()}), \n"
+        + context.RequestServices.GetFullState().SessionServices.GetServices<InfoProvider>().First().Get(false) + "\n"
+        + context.RequestServices.GetFullState().SessionServices.GetServices<InfoProvider>().Last().Get(cancel) + "\n"
+        );
 });
 
 app.Run();
@@ -37,15 +41,16 @@ app.Run();
 public class InfoProvider : IDisposable
 {
     private ConcurrentQueue<int> _queue = new();
-    private readonly CancellationTokenSource _cancellationTokenSource = new();
     private Task _fill = null!;
     private readonly ILogger<InfoProvider> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly CancellationTokenSource _cancellationTokenSource;
 
     public InfoProvider(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
         _logger = _serviceProvider.GetRequiredService<ILogger<InfoProvider>>();
+        _cancellationTokenSource = _serviceProvider.GetFullState().CreateCancellationTokenSource();
         int value = 0;
         CancellationToken cancellationToken = _cancellationTokenSource.Token;
         _fill = Task.Run(async () =>
@@ -55,25 +60,29 @@ public class InfoProvider : IDisposable
                 await Task.Delay(1000);
                 _queue.Enqueue(++value);
             }
+            _logger.LogInformation($"({GetHashCode()}) CancellationRequested");
         });
     }
 
-    public string Get()
+    public string Get(bool cancel)
     {
-        IFullState session = _serviceProvider.GetFullState();
-        Another another = session.RequestServices.GetRequiredService<Another>();
+        Another another = _serviceProvider.GetFullState().RequestServices.GetRequiredService<Another>();
         _logger.LogInformation($"{this}({GetHashCode()}) {another}({another.GetHashCode()})");
         List<int> result = new();
         while (_queue.TryDequeue(out int k))
         {
             result.Add(k);
         }
+        if (cancel)
+        {
+            _logger.LogInformation($"{this}({GetHashCode()}) Cancel by request");
+            _cancellationTokenSource.Cancel();
+        }
         return $"{this}({GetHashCode()}) {another}({another.GetHashCode()}), {string.Join(", ", result)}";
     }
 
     public void Dispose()
     {
-        _cancellationTokenSource.Cancel();
         _fill.Wait();
         _logger.LogInformation($"{this}({GetHashCode()}) disposed");
     }

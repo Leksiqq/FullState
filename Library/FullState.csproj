@@ -7,7 +7,7 @@
 	  <AssemblyName>Net.Leksi.FullState</AssemblyName>
 	  <RootNamespace>Net.Leksi.FullState</RootNamespace>
 	  <Copyright>2022-05-16</Copyright>
-	  <VersionPrefix>2.0.1</VersionPrefix>
+	  <VersionPrefix>2.1.0</VersionPrefix>
 	  <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
 	  <Description>
@@ -23,6 +23,11 @@
 	  <OutputType>Library</OutputType>
 	  <PackageReadmeFile>readme.md</PackageReadmeFile>
 	  <RepositoryType>git</RepositoryType>
+	  <PackageReleaseNotes>- Добавлена возможность закрытия сессии.
+- Добавлена возможность получить CancellationTokenSource, связанный с сессией. 
+
+- Added the ability to close the session.
+- Added the ability to get the CancellationTokenSource associated with the session.</PackageReleaseNotes>
   </PropertyGroup>
 
   <Target Name="CopyPackage" AfterTargets="Pack">

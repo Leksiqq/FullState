@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Net.Leksi.FullState" Version="2.0.0" />
+    <ProjectReference Include="..\..\Library\FullStateDebug.csproj" />
   </ItemGroup>
 
 </Project>

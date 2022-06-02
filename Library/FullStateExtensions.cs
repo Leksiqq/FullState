@@ -66,7 +66,7 @@ public static class FullStateExtensions
         postEvictionCallbackRegistration.State = typeof(FullStateExtensions);
         postEvictionCallbackRegistration.EvictionCallback = (k, v, r, s) =>
         {
-            if (r is EvictionReason.Expired && s is Type stype && stype == typeof(FullStateExtensions) 
+            if ((r is EvictionReason.Expired || r is EvictionReason.Removed) && s is Type stype && stype == typeof(FullStateExtensions) 
                 && v is Session session)
             {
                 session.Dispose();
@@ -102,7 +102,7 @@ public static class FullStateExtensions
                 {
                     if (_checkSessions is null)
                     {
-                        _checkSessions = new(_fullStateOptions.ExpirationScanFrequency.TotalMilliseconds);
+                        _checkSessions = new System.Timers.Timer(_fullStateOptions.ExpirationScanFrequency.TotalMilliseconds);
                         _checkSessions.Elapsed += (s, e) =>
                         {
                             sessions.TryGetValue(string.Empty, out object dumb);
@@ -112,43 +112,54 @@ public static class FullStateExtensions
                     }
                 }
             }
-            object? sessionObj = null;
-            Session? session = null;
             string key = context.Request.Cookies[_fullStateOptions.Cookie.Name];
-            bool isNewSession = false;
-            FullState fullState = (context.RequestServices.GetRequiredService<IFullState>() as FullState)!;
-            if (
-                key is null
-                || !sessions.TryGetValue(key, out sessionObj)
-                || (session = sessionObj! as Session) is null
-            )
+            if (_fullStateOptions.LogoutPath is null || context.Request.Path != _fullStateOptions.LogoutPath)
             {
-                key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref _cookieSequenceGen)}";
-                session = new();
-                session!.SessionServices = context.RequestServices.CreateScope().ServiceProvider;
-                context.Response.Cookies.Append(_fullStateOptions.Cookie.Name, key, _fullStateOptions.Cookie.Build(context));
-                isNewSession = true;
-            }
-
-            fullState.RequestServices = context.RequestServices;
-            fullState.SessionServices = session.SessionServices!;
-            try
-            {
-                await session.OneRequestAllowed.WaitAsync();
-                await (next?.Invoke() ?? Task.CompletedTask);
-                if (isNewSession)
+                object? sessionObj = null;
+                Session? session = null;
+                bool isNewSession = false;
+                FullState fullState = (context.RequestServices.GetRequiredService<IFullState>() as FullState)!;
+                if (
+                    string.IsNullOrEmpty(key)
+                    || !sessions.TryGetValue(key, out sessionObj)
+                    || (session = sessionObj! as Session) is null
+                )
                 {
-                    sessions.Set(key, session, _entryOptions);
+                    key = $"{Guid.NewGuid()}:{Interlocked.Increment(ref _cookieSequenceGen)}";
+                    session = new();
+                    session!.SessionServices = context.RequestServices.CreateScope().ServiceProvider;
+                    context.Response.Cookies.Append(_fullStateOptions.Cookie.Name, key, _fullStateOptions.Cookie.Build(context));
+                    isNewSession = true;
+                }
+
+                fullState.RequestServices = context.RequestServices;
+                fullState.Session = session;
+
+                try
+                {
+                    await session.OneRequestAllowed.WaitAsync();
+                    await (next?.Invoke() ?? Task.CompletedTask);
+                    if (isNewSession)
+                    {
+                        sessions.Set(key, session, _entryOptions);
+                    }
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+                finally
+                {
+                    session.OneRequestAllowed.Release();
                 }
             }
-            catch (Exception)
+            else
             {
-                throw;
+                sessions.Remove(key);
+                context.Response.StatusCode = 204;
+                context.Response.Cookies.Delete(_fullStateOptions.Cookie.Name);
             }
-            finally
-            {
-                session.OneRequestAllowed.Release();
-            }
+
         });
         return app;
     }

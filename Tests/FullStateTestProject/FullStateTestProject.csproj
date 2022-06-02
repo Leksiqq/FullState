@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FullStateTestServer\FullStateTestServerDebug.csproj" />
+    <ProjectReference Include="..\FullStateTestServer\FullStateTestServer.csproj" />
   </ItemGroup>
 
 </Project>

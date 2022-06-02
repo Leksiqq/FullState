@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- Yandex.Metrika counter -->
+        <script type="text/javascript" >
+            (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+            (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+        
+            ym(88869326, "init", {
+                clickmap:true,
+                trackLinks:true,
+                accurateTrackBounce:true
+            });
+        </script>
+        <noscript><div><img src="https://mc.yandex.ru/watch/88869326" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+        <!-- /Yandex.Metrika counter -->
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+        <title>Net.Leksi.FullState: библиотека для расширения контейнера внедрения зависимости для поддержки служб контекста сессии для сервера ASP.NET Core</title>
+        <style>
+            body {
+              font-family: "Lato", sans-serif;
+            }
+            
+            .sidenav {
+              height: 100%;
+              -width: 200px;
+              width: auto;
+              position: fixed;
+              z-index: 1;
+              top: 0;
+              left: 0;
+              background-color: rgb(255, 255, 255);
+              overflow-x: hidden;
+              padding-top: 20px;
+              font-size: smaller;
+            }
+            
+            .sidenav a {
+              padding: 6px 6px 6px 32px;
+              text-decoration: none;
+              display: block;
+            }
+            
+            .sidenav span.expander {
+              padding: 6px 6px 6px 32px;
+              text-decoration: none;
+              display: block;
+            }
+            
+            .main {
+              margin-left: 200px; /* Same as the width of the sidenav */
+            }
+            
+            @media screen and (max-height: 450px) {
+              .sidenav {padding-top: 15px;}
+              .sidenav a {font-size: 18px;}
+            }
+            
+            .indent1 {
+                margin-left: 10px;
+            }
+            
+            .indent2 {
+                margin-left: 20px;
+            }
+            
+            tr td:first-child {
+              width: 0;
+              white-space: nowrap;
+            }
+            
+            table.members {
+                border-collapse: collapse;
+            }
+            table.members td {
+                border: 1px solid black;
+                padding: 5px;
+            }
+            table:not(.members) td {
+                border: initial;
+                padding: 5px;
+            }
+            table.methods {
+                border-collapse: collapse;
+            }
+            table.methods tr {
+                border: solid gray 1px;
+            }
+            span.parameter {
+                padding: 5px;
+                background-color: lightgray;
+            }
+            td {
+                vertical-align: top;
+            }
+            </style>
+            <script src="https://code.jquery.com/jquery-3.6.0.min.js" lang="javascript"></script>
+            <script lang="javascript">
+                $(window).ready(() => {
+                    $('span.expander').click(e => {
+                        if($(e.target).children('span.expander-icon').hasClass('open')) {
+                            $(e.target).children('span.expander-icon').removeClass('open');
+                            $(e.target).children('span.expander-icon').addClass('closed');
+                            $(e.target).children('span.expander-icon').html('+')
+                            $(e.target).children('div').hide();
+                        }
+                        else {
+                            $(e.target).children('span.expander-icon').removeClass('closed');
+                            $(e.target).children('span.expander-icon').addClass('open');
+                            $(e.target).children('span.expander-icon').html('-')
+                            $(e.target).children('div').show();
+                        }
+                        $('.main').css('margin-left', $('.sidenav').css('width'));
+                    });
+                    $('span.expander').click();
+                });
+            </script>
+    </head>
+    <body>
+        <div class="sidenav">
+            <a href="index_en.html">In English</a>
+            <b><a href="#">v2.1.0</a></b>
+            <a href="../v2.0.1/index_en.html">v2.0.1</a>
+            <a style="font-size: larger;" href="#FullState">Net.Leksi.FullState</a>
+            <span class="expander"><span class="expander-icon open">+</span> FullStateExtensions
+                <div>
+                    <a style="font-size: larger;" href="#FullStateExtensions">FullStateExtensions</a>
+                    <a style="font-size: larger;" href="#FullStateExtensions.methods">Методы</a>
+                </div>
+            </span>
+            <span class="expander"><span class="expander-icon open">+</span> FullStateOptions
+                <div>
+                    <a style="font-size: larger;" href="#FullStateOptions">FullStateOptions</a>
+                    <a style="font-size: larger;" href="#FullStateOptions.properties">Свойства</a>
+                </div>
+            </span>
+            <span class="expander"><span class="expander-icon open">+</span> IFullState
+                <div>
+                    <a style="font-size: larger;" href="#IFullState">IFullState</a>
+                    <a style="font-size: larger;" href="#IFullState.properties">Свойства</a>
+                    <a style="font-size: larger;" href="#IFullState.methods">Методы</a>
+                </div>
+            </span>
+            <span class="expander"><span class="expander-icon open">+</span> FullStateDefaults
+                <div>
+                    <a style="font-size: larger;" href="#FullStateDefaults">FullStateDefaults</a>
+                    <a style="font-size: larger;" href="#FullStateOptions.fields">Поля</a>
+                </div>
+            </span>
+            <span class="expander"><span class="expander-icon open">+</span> Использование
+                <div>
+                    <a style="font-size: larger;" href="#DI.config">Конфигурирование контейнера DI</a>
+                    <a style="font-size: larger;" href="#App.config">Конфигурирование приложения</a>
+                    <a style="font-size: larger;" href="#Access">Доступ к службам</a>
+                </div>
+            </span>
+            <a style="font-size: larger;" href="#sources">Исходники</a>
+            <a style="font-size: larger;" href="#packages">Пакеты</a>
+        </div>
+        <div class="main">
+            <a name="FullState"/>
+            <h1>Net.Leksi.FullState</h1>
+            <p>
+                Библиотека предоставляет возможность стандартного использования механизма внедрения зависимости (Dependency Injection) в ASP.NET Core приложениях с сохранением 
+                состояния между запросами в течение сессии (full state). Поддерживает сохранение специального контейнера DI в течение сессии.
+                Также предоставляет возможность получать доступ к службам контеста запроса в методах служб контекста сессии.
+            </p>
+            <a name="FullStateExtensions"/>
+            <h2>Класс FullStateExtensions</h2>
+            <p>
+                Предоставляет методы расширения для типов 
+                <a href="https://docs.microsoft.com/ru-ru/dotnet/api/microsoft.extensions.dependencyinjection.iservicecollection" target="_blank">IServiceCollection</a>
+                и <a href="https://docs.microsoft.com/ru-ru/dotnet/api/microsoft.aspnetcore.builder.iapplicationbuilder" target="_blank">IApplicationBuilder</a>.
+            </p>
+                <script src="https://gist.github.com/Leksiqq/9c26c46546d4d7963b754440e82ac723.js"></script>
+            <a name="FullStateExtensions.methods"/>
+            <h2>Методы</h2>
+            <table class="methods">
+                <tr>
+                    <td><a href="#AddFullState">AddFullState(IServiceCollection)</a></td>
+                    <td>Добавляет инфраструктуру, необходимую для full state сервера</td>
+                </tr>
+                <tr>
+                    <td><a href="#AddFullState">AddFullState(IServiceCollection, Action<FullStateOptions>)</a></td>
+                    <td>Добавляет инфраструктуру, необходимую для full state сервера</td>
+                </tr>
+                <tr>
+                    <td><a href="#UseFullState">UseFullState(IApplicationBuilder)</a></td>
+                    <td>Добавляет в данное приложение ПО промежуточного слоя для автоматического включения поддержки full state сервера</td>
+                </tr>
+                <tr>
+                    <td><a href="#GetFullState">GetFullState(IServiceProvider)</a></td>
+                    <td>Получает из контейнера DI аксессор к контейнерам контекста сессии и контекста запроса</td>
+                </tr>
+            </table>
+            <a name="AddFullState"></a>
+            <h3>Метод AddFullState(...)</h3>
+            <p>
+                Добавляет инфраструктуру, необходимую для full state сервера. 
+            </p>
+            <script src="https://gist.github.com/Leksiqq/2cfd1f8217fd45a2653162ffdbc150ce.js"></script>
+            <h4>Параметры</h4>
+            <p>
+                <span class="parameter">services</span> <a href="https://docs.microsoft.com/ru-ru/dotnet/api/microsoft.extensions.dependencyinjection.iservicecollection" target="_blank">IServiceCollection</a>
+            </p>
+            <p>
+                Целевая коллекция.
+            </p>
+            <p>
+                <span class="parameter">configure</span> <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.action-1" target="_blank">Action</a>&lt;<a href="#FullStateOptions">FullStateOptions&gt;</a>
+            </p>
+            <p>
+                Делегат для настройки предоставленного набора опций.
+            </p>
+            <h4>Возвращаемое значение</h4>
+            <p>
+                <a href="https://docs.microsoft.com/ru-ru/dotnet/api/microsoft.extensions.dependencyinjection.iservicecollection" target="_blank">IServiceCollection</a>
+            </p>
+            <p>
+                Целевая коллекция для цепочки вызовов.
+            </p>
+
+            <a name="UseFullState"/>
+            <h3>Метод UseFullState(...)</h3>
+            <p>
+                Добавляет в данное приложение ПО промежуточного слоя для автоматического включения поддержки full state сервера.
+            </p>
+            <script src="https://gist.github.com/Leksiqq/bf561eb13cb178fd8783eed8b0cf07ea.js"></script>
+            <h4>Параметры</h4>
+            <p>
+                <span class="parameter">app</span> <a href="https://docs.microsoft.com/ru-ru/dotnet/api/microsoft.aspnetcore.builder.iapplicationbuilder" target="_blank">IApplicationBuilder</a>
+            </p>
+            <p>
+                Целевое приложение.
+            </p>
+
+            <h4>Возвращаемое значение</h4>
+            <p>
+                <a href="https://docs.microsoft.com/ru-ru/dotnet/api/microsoft.aspnetcore.builder.iapplicationbuilder" target="_blank">IApplicationBuilder</a>
+            </p>
+            <p>
+                Целевое приложение для цепочки вызовов.
+            </p>
+
+            <a name="GetFullState"/>
+            <h3>Метод GetFullState(...)</h3>
+            <p>
+                Получает из контейнера DI аксессор к контейнерам контекста сессии и контекста запроса.
+            </p>
+            <script src="https://gist.github.com/Leksiqq/96c0f8f56fd2128d8ffbe8673f023536.js"></script>
+            <h4>Параметры</h4>
+            <p>
+                <span class="parameter">serviceProvider</span> <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.iserviceprovider" target="_blank">IServiceProvider</a>
+            </p>
+            <p>
+                Целевой контейнер DI.
+            </p>
+
+            <h4>Возвращаемое значение</h4>
+            <p>
+                <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.iserviceprovider" target="_blank">IServiceProvider</a>
+            </p>
+            <p>
+                Целевой контейнер DI для цепочки вызовов.
+            </p>
+
+            <a name="FullStateOptions"/>
+            <h2>Класс FullStateOptions</h2>
+
+            <p>
+                Предоставляет набор опций для конфигурирования инфраструктуры.
+            </p>
+
+            <script src="https://gist.github.com/Leksiqq/902300e69c625962ff17bcca625b56b3.js"></script>
+
+            <a name="FullStateOptions.properties"/>
+            <h2>Свойства</h2>
+            <table class="methods">
+                <tr>
+                    <td>
+                        <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.timespan" target="_blank">TimeSpan</a> IdleTimeout
+                    </td>
+                    <td>
+                        Указывает продолжительность бездействия сессии до того, как она будет прекращена. 
+                        Каждый доступ к сессии сбрасывает время ожидания. По умолчанию 1 час.
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.timespan" target="_blank">TimeSpan</a> ExpirationScanFrequency
+                    </td>
+                    <td>
+                        Указывает периодичность проверки завершённых сессий для освобождения их ресурсов. По умолчаниию 1 секунда.
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="https://docs.microsoft.com/ru-ru/dotnet/api/microsoft.aspnetcore.http.cookiebuilder" target="_blank">CookieBuilder</a> Cookie
+                    </td>
+                    <td>
+                        Определяет параметры, используемые для создания файлов cookie. 
+                        <br/>
+                        <br/>Для Name задается значение по умолчанию 
+                        <a href="#FullStateDefaults" target="_blank">FullStateDefaults</a>.CookieName. 
+                        <br/>Для Path задается значение по умолчанию <a href="#FullStateDefaults" target="_blank">FullStateDefaults</a>.CookiePath. 
+                        <br/>Для SameSite задается значение по умолчанию <a href="https://docs.microsoft.com/ru-ru/dotnet/api/microsoft.aspnetcore.http.samesitemode" target="_blank">SameSiteMode.Lax</a>. 
+                        <br/>HttpOnlyпо умолчанию имеет значение <b>true</b>.
+                        <br/>IsEssential по умолчанию <b>false</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.string" target="_blank">string</a> LogoutPath
+                    </td>
+                    <td>
+                        Определяет путь Http-запроса, при котором происходит удаление текущей сессии и возврат кода 204.
+                    </td>
+                </tr>
+            </table>
+            <a name="IFullState"/>
+            <h2>Интерфейс IFullState</h2>
+
+            <p>
+                Предоставляет доступ к службам со временем жизни Http-контекста из служб со временем жизни сесссии.
+            </p>
+
+            <script src="https://gist.github.com/Leksiqq/a0219f20f2f07ae8027eb0613bb66374.js"></script>
+
+            <a name="IFullState.properties"/>
+            <h2>Свойства</h2>
+            <table class="methods">
+                <tr>
+                    <td>
+                        <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.iserviceprovider" target="_blank">IServiceProvider</a> RequestServices
+                    </td>
+                    <td>
+                        Провайдер служб Http-контекста.
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="https://docs.microsoft.com/en-us/dotnet/api/system.iserviceprovider" target="_blank">IServiceProvider</a> SessionServices
+                    </td>
+                    <td>
+                        Провайдер служб контекста сессии.
+                    </td>
+                </tr>
+            </table>
+            <a name="IFullState.methods"/>
+            <h2>Методы</h2>
+            <table class="methods">
+                <tr>
+                    <td><a href="#CreateCancellationTokenSource">CreateCancellationTokenSource()</a></td>
+                    <td>
+                        Возвращает новый <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.threading.cancellationtokensource" target="_blank">CreateCancellationTokenSource</a>,
+                        связанный с сессией, который автоматически отменяется при завершении сессии.
+                    </td>
+                </tr>
+            </table>
+
+            <a name="CreateCancellationTokenSource"/>
+            <h3>Метод CreateCancellationTokenSource()</h3>
+            <p>
+                Возвращает новый <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.threading.cancellationtokensource">CreateCancellationTokenSource</a>,
+                        связанный с сессией, который автоматически отменяется при завершении сессии.
+            </p>
+            <script src="https://gist.github.com/Leksiqq/13532503ef4bc2dcd05a5da27eaf2fa3.js"></script>
+
+            <h4>Возвращаемое значение</h4>
+            <p>
+                <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.threading.cancellationtokensource" target="_blank">CreateCancellationTokenSource</a>
+            </p>
+            <p>
+                Новый <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.threading.cancellationtokensource">CreateCancellationTokenSource</a>,
+                        связанный с сессией, который автоматически отменяется при завершении сессии.
+            </p>
+
+            <a name="FullStateDefaults"/>
+            <h2>Класс FullStateDefaults</h2>
+
+            <p>
+                Предоставляет набор значений по умолчанию.
+            </p>
+
+            <script src="https://gist.github.com/Leksiqq/1eb7d934ae79b8521653e22a8cfa7007.js"></script>
+
+            <a name="FullStateOptions.fields"/>
+            <h2>Поля</h2>
+            <table class="methods">
+                <tr>
+                    <td>
+                        <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.string" target="_blank">string</a> CookieName
+                    </td>
+                    <td>
+                        Представляет имя файла cookie по умолчанию — ".FullState.Session".
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="https://docs.microsoft.com/ru-ru/dotnet/api/system.string" target="_blank">string</a> CookiePath
+                    </td>
+                    <td>
+                        Представляет путь по умолчанию, используемый для создания файла cookie - "/".
+                    </td>
+                </tr>
+            </table>
+            
+            <h2>Использование</h2>
+
+            <a name="DI.config"/>
+            <h3>Конфигурирование контейнера DI</h3>
+
+            <script src="https://gist.github.com/Leksiqq/51576e62fb5847e1ef7506780443277b.js"></script>
+
+            <p>
+                В примере подключается поддержка служб контекста сессии с опциями по умолчанию. 
+                Службы <code>InfoProvider</code> и <code>Another</code> регистрируется как Scoped.
+            </p>
+
+            <a name="App.config"/>
+            <h3>Конфигурирование приложения</h3>
+
+            <script src="https://gist.github.com/Leksiqq/94974139fadb4290ec9261aadf34c7d9.js"></script>
+
+            <p>
+                В примере добавляется ПО промежуточного слоя для автоматического включения поддержки служб контекста сессии.
+            </p>
+
+            <a name="Access"/>
+            <h3>Доступ к службам</h3>
+
+            <script src="https://gist.github.com/Leksiqq/f042dad6865185d9af276a4330fb0fce.js"></script>
+
+            <h4>В контроллере и службах из Http-контекста</h4>
+
+            <p>
+                В примере объекты <code>another1</code> и <code>another2</code> - один и тот же объект из контекста Http-запроса, <br/>
+                объекты <code>infoProvider1</code> и <code>infoProvider3</code> - один и тот же объект из контекста сессии, <br/>
+                объекты <code>infoProvider2</code> и <code>infoProvider4</code> - один и тот же объект из контекста Http-запроса (<code>infoProvider1 != infoProvider2</code>).<br/>
+                В объекте <code>infoProvider2</code>:<br/>
+                объекты <code>another3</code> и <code>another4</code> - один и тот же объект из контекста Http-запроса (все <code>another...</code> совпадают).
+            </p>
+
+            <h4>В службах из контекста сессии</h4>
+            <p>
+                В примере в объекте <code>infoProvider1</code>:<br/>
+                объект <code>another3</code> - объект из контекста сессии, <br/>
+                объект <code>another4</code> - объект из контекста Http-запроса, (<code>another1 == another4 && another2 == another4</code>).<br/>
+            </p>
+            <a name="sources"/>
+            <h2>Исходники</h2>
+            <p>
+                <b>GitHub</b>: <a href="https://github.com/Leksiqq/FullState">https://github.com/Leksiqq/FullState</a>
+            </p>
+            <p>
+                <b>SourceForge</b>: <a href="https://sourceforge.net/p/fullstate/code/ci/master/tree/">https://sourceforge.net/p/fullstate/code/ci/master/tree/</a>
+            </p>
+            <a name="packages"/>
+            <h2>Пакеты</h2>
+            <p>
+                <b>NuGet</b>: <a href="https://www.nuget.org/packages/Net.Leksi.FullState">Net.Leksi.FullState</a>
+            </p>
+        </div>        
+    </body>
+</html>

@@ -59,4 +59,13 @@ public class FullStateOptions
         IsEssential = false,
         HttpOnly = true,
     };
+    /// <summary>
+    /// <para xml:lang="ru">
+    /// Задаёт специальный путь для закрытия сессии.
+    /// </para>
+    /// <para xml:lang="en">
+    /// Sets a special path to close the session.
+    /// </para>
+    /// </summary>
+    public string? LogoutPath { get; set; } = null;
 }

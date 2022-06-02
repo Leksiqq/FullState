@@ -4,14 +4,22 @@ internal class Session: IDisposable
 {
     internal SemaphoreSlim OneRequestAllowed { get; init; } = new(1);
 
-    public IServiceProvider SessionServices { get; internal set; } = null!;
+    internal IServiceProvider SessionServices { get; set; } = null!;
+
+    internal CancellationTokenSource CancellationTokenSource { get; init; } = new();
 
     public void Dispose()
     {
-        if(SessionServices is IDisposable disposable)
+        if (!CancellationTokenSource.IsCancellationRequested)
+        {
+            CancellationTokenSource.Cancel();
+        }
+        CancellationTokenSource.Dispose();
+        if (SessionServices is IDisposable disposable)
         {
             disposable.Dispose();
         }
         OneRequestAllowed.Dispose();
     }
+
 }
