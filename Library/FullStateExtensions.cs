@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Net.Leksi.FullState;
 /// <summary>
@@ -74,6 +75,12 @@ public static class FullStateExtensions
         };
         _entryOptions.PostEvictionCallbacks.Add(postEvictionCallbackRegistration);
 
+        services.Configure<FullStateOptions>(op => 
+        {
+            op.ExpirationScanFrequency = _fullStateOptions.ExpirationScanFrequency;
+        });
+
+        services.AddSingleton<IHostedService, MemoryCacheCleaner>();
         services.AddScoped<IFullState, FullState>();
 
 
@@ -96,22 +103,22 @@ public static class FullStateExtensions
         app.Use(async (context, next) =>
         {
             IMemoryCache sessions = context.RequestServices.GetRequiredService<IMemoryCache>();
-            if (_checkSessions is null)
-            {
-                lock (app)
-                {
-                    if (_checkSessions is null)
-                    {
-                        _checkSessions = new System.Timers.Timer(_fullStateOptions.ExpirationScanFrequency.TotalMilliseconds);
-                        _checkSessions.Elapsed += (s, e) =>
-                        {
-                            sessions.TryGetValue(string.Empty, out object dumb);
-                        };
-                        _checkSessions.Enabled = true;
-                        _checkSessions.AutoReset = true;
-                    }
-                }
-            }
+            //if (_checkSessions is null)
+            //{
+            //    lock (app)
+            //    {
+            //        if (_checkSessions is null)
+            //        {
+            //            _checkSessions = new System.Timers.Timer(_fullStateOptions.ExpirationScanFrequency.TotalMilliseconds);
+            //            _checkSessions.Elapsed += (s, e) =>
+            //            {
+            //                sessions.TryGetValue(string.Empty, out object dumb);
+            //            };
+            //            _checkSessions.Enabled = true;
+            //            _checkSessions.AutoReset = true;
+            //        }
+            //    }
+            //}
             string key = context.Request.Cookies[_fullStateOptions.Cookie.Name];
             if (_fullStateOptions.LogoutPath is null || context.Request.Path != _fullStateOptions.LogoutPath)
             {

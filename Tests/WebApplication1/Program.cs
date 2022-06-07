@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddFullState(op =>
 {
     op.Cookie.Name = "qq";
-    op.ExpirationScanFrequency = TimeSpan.FromSeconds(1);
+    op.ExpirationScanFrequency = TimeSpan.FromSeconds(2);
     op.IdleTimeout = TimeSpan.FromSeconds(20);
     op.LogoutPath = "/logout";
 });
